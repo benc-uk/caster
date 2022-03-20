@@ -1,67 +1,105 @@
 package main
 
 import (
-	"bufio"
 	"image"
 	"image/color"
 	_ "image/png"
 	"log"
 	"math"
-	"os"
 	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+// Global game constants
 const mapSize = 100
-const winWidth = 800
-const winHeight = 600
+const winWidth = 1024
+const winHeight = 768
 const winHeightHalf = winHeight / 2
-const cellSize = 40
+const cellSize = 36
 const textureSize = 32
 
-const viewDistance = cellSize * 8
-const viewRaysRatio = 2
-
-const colHeightScale = winHeight / 15
+// Used by raycasting when rendering the view
+const viewDistance = cellSize * 10
+const viewRaysRatio = 1
+const colHeightScale = winHeight / (cellSize / 2)
 const viewRays = winWidth / viewRaysRatio
-const fov = math.Pi / 3
-const rayStepT = 0.2
+const rayStepT = 0.3
 
-var skyColour = color.RGBA{0, 190, 231, 255}
-var floorColour = color.RGBA{64, 50, 27, 255}
-
-type Game struct {
-	mapdata   [][]int
-	mapWidth  int
-	mapHeight int
-	player    Player
-}
-
-type Player struct {
-	x         float64
-	y         float64
-	angle     float64
-	moveSpeed float64
-	turnSpeed float64
-}
+var overlayCellSize = cellSize / 4
+var overlayImage = ebiten.NewImage(mapSize*overlayCellSize, mapSize*overlayCellSize)
+var overlayZoom = 1.0
+var overlayShown = false
 
 var wallImages []*ebiten.Image
+var spriteImages map[string]*ebiten.Image
+var floorImage *ebiten.Image
+var ceilImage *ebiten.Image
 
+// ===========================================================
+// Load textures & sprites etc
+// ===========================================================
 func init() {
 	var err error
 	wallImages = make([]*ebiten.Image, 10)
+	spriteImages = make(map[string]*ebiten.Image, 10)
 
-	wallImages[1], _, err = ebitenutil.NewImageFromFile("./textures/1.png")
-	wallImages[2], _, err = ebitenutil.NewImageFromFile("./textures/2.png")
-	wallImages[3], _, err = ebitenutil.NewImageFromFile("./textures/3.png")
-	wallImages[4], _, err = ebitenutil.NewImageFromFile("./textures/4.png")
-	if err != nil {
+	log.Printf("Loading textures...")
+	for i := 1; i < 5; i++ {
+		wallImages[i], _, err = ebitenutil.NewImageFromFile("./textures/" + strconv.Itoa(i) + ".png")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	log.Printf("Loading sprites...")
+	for _, spriteId := range []string{"ghoul", "skeleton", "thing"} {
+		spriteImages[spriteId], _, err = ebitenutil.NewImageFromFile("./monsters/" + spriteId + ".png")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	log.Printf("Loading floor & ceiling texture...")
+	floorImage, _, _ = ebitenutil.NewImageFromFile("./textures/floor.png")
+	ceilImage, _, _ = ebitenutil.NewImageFromFile("./textures/ceil.png")
+}
+
+// ===========================================================
+// Entry point
+// ===========================================================
+func main() {
+	ebiten.SetWindowSize(winWidth, winHeight)
+	ebiten.SetWindowTitle("Castle Caster")
+
+	log.Printf("Starting game!")
+	g := &Game{}
+
+	g.player = Player{
+		x:         cellSize*1 + cellSize/2,
+		y:         cellSize*1 + cellSize/2,
+		angle:     0,
+		moveSpeed: cellSize / 12.0,
+		turnSpeed: math.Pi / 70,
+		fov:       math.Pi / 3,
+	}
+
+	g.level = 1
+	loadMap("./maps/"+strconv.Itoa(g.level)+".txt", g)
+	g.mapWidth = len(g.mapdata)
+	g.mapHeight = len(g.mapdata[0])
+	log.Printf("Map level %d loaded", g.level)
+
+	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
 }
 
+// ===========================================================
+// Update loop handles inputs
+// ===========================================================
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyRight) {
 		g.player.angle += g.player.turnSpeed
@@ -87,147 +125,153 @@ func (g *Game) Update() error {
 		g.player.y = y
 	}
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyO) {
+		overlayShown = !overlayShown
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyMinus) {
+		overlayZoom -= 0.3
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyEqual) {
+		overlayZoom += 0.3
+	}
+
 	return nil
 }
 
-func (g *Game) checkCollision(x, y float64) int {
-	// if x < 0 || y < 0 || x > winWidth || y > winHeight {
-	// 	return 1
-	// }
-
-	mapCellX := int(x / cellSize)
-	mapCellY := int(y / cellSize)
-
-	// if mapCellX < 0 || mapCellX >= g.mapWidth || mapCellY < 0 || mapCellY >= g.mapHeight {
-	// 	return 1
-	// }
-	return g.mapdata[mapCellX][mapCellY]
-}
-
+// ===========================================================
+// Main draw function
+// ===========================================================
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(skyColour)
+
+	const scaleW = winWidth / 10.0
+	const scaleH = winHeightHalf / 600.0
+	floorOp := &ebiten.DrawImageOptions{}
+	floorOp.GeoM.Scale(scaleW, scaleH)
+	floorOp.GeoM.Translate(0, winHeightHalf)
+	screen.DrawImage(floorImage, floorOp)
+	ceilOp := &ebiten.DrawImageOptions{}
+	ceilOp.GeoM.Translate(0, 0)
+	ceilOp.GeoM.Scale(scaleW, scaleH)
+	screen.DrawImage(ceilImage, ceilOp)
 
 	// Cast rays to render player's view
 	for i := 0; i < viewRays; i++ {
-		rayAngle := g.player.angle - fov/2 + fov*float64(i)/viewRays
+		rayAngle := g.player.angle - g.player.fov/2 + g.player.fov*float64(i)/viewRays
 		t := 0.0
 		for t = 0.0; t < viewDistance; t += rayStepT {
 			cx := g.player.x + (t * math.Cos(rayAngle))
 			cy := g.player.y + (t * math.Sin(rayAngle))
 
 			colisionIndex := g.checkCollision(cx, cy)
+			// If wall was hit
 			if colisionIndex > 0 {
-				colHeight := (winHeight / t) * colHeightScale / (math.Cos(rayAngle - g.player.angle))
-
 				hitx := int(cx) % cellSize
 				hity := int(cy) % cellSize
-				texcoord := hitx
-				if hitx == 0 || hitx == cellSize-1 {
-					texcoord = hity
+				texColumn := hitx
+				if hitx < 1 || hitx >= cellSize-1 {
+					texColumn = hity
 				}
-				texcoord = texcoord * textureSize / cellSize
+				texColumn = texColumn * textureSize / cellSize
 
-				// Get texture column at
-				colStrip := textureColumn(wallImages[colisionIndex], texcoord)
+				// Get texture column at the hit point
+				textureColStrip := wallImages[colisionIndex].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
 
 				op := &ebiten.DrawImageOptions{}
+				colHeight := (winHeight / t) * colHeightScale / (math.Cos(rayAngle - g.player.angle))
 				op.GeoM.Scale(viewRaysRatio, colHeight/textureSize)
-				op.GeoM.Translate(float64(i*viewRaysRatio), winHeightHalf-colHeight/2)
-				screen.DrawImage(colStrip, op)
+				op.GeoM.Translate(float64(i)*float64(viewRaysRatio), winHeightHalf-colHeight/2)
 
-				// draw floor
-				ebitenutil.DrawRect(screen, float64(i*viewRaysRatio), winHeightHalf+colHeight/2, viewRaysRatio, winHeightHalf, floorColour)
+				// Some visual flair, scale to darkness and filter the texture
+				//op.Filter = ebiten.FilterLinear
+				dist := 1 - (t / viewDistance * 1.5)
+				dist *= 1.5
+
+				op.ColorM.Scale(dist, dist, dist, 1)
+				screen.DrawImage(textureColStrip, op)
+
+				// Important to stop!
 				break
 			}
 		}
-
-		if t >= viewDistance {
-			ebitenutil.DrawRect(screen, float64(i*viewRaysRatio), winHeightHalf, viewRaysRatio, winHeight, floorColour)
-		}
 	}
 
-	// Debug
-	//overlay(screen, g)
+	for _, sprite := range g.sprites {
+		drawSprite(screen, g, sprite)
+	}
+
+	// overlay map
+	overlay(screen, g)
 }
 
+func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
+	// direction to player
+	spriteDir := math.Atan2(sprite.y-g.player.y, sprite.x-g.player.x)
+	const spriteImgSize = 32
+	const spriteImgSizeH = 16
+
+	// remove unnecessary periods from the relative direction
+	// I don't know what this really does
+	for ; spriteDir-g.player.angle > math.Pi; spriteDir -= 2 * math.Pi {
+	}
+	for ; spriteDir-g.player.angle < -math.Pi; spriteDir += 2 * math.Pi {
+	}
+
+	spriteDist := math.Sqrt(math.Pow(g.player.x-sprite.x, 2) + math.Pow(g.player.y-sprite.y, 2))
+	spriteScale := (1 / spriteDist) * winHeight
+	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidth) + (winWidth / 2) - (spriteImgSizeH * spriteScale) // do not forget the 3D view takes only a half of the framebuffer
+	vOffset := winHeight/2.0 - (spriteImgSizeH / 2.0 * spriteScale)
+
+	spriteOp := &ebiten.DrawImageOptions{}
+	spriteOp.GeoM.Scale(spriteScale, spriteScale)
+	spriteOp.GeoM.Translate(hOffset, vOffset)
+	screen.DrawImage(spriteImages[sprite.id], spriteOp)
+}
+
+// ===========================================================
+// Required by ebiten
+// ===========================================================
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return outsideWidth, outsideHeight
 }
 
-func main() {
-	ebiten.SetWindowSize(winWidth, winHeight)
-	ebiten.SetWindowTitle("Castle Caster")
-
-	g := &Game{}
-	g.mapdata = loadMap("./map.txt")
-	g.mapWidth = len(g.mapdata)
-	g.mapHeight = len(g.mapdata[0])
-	log.Printf("Map size: %dx%d", g.mapWidth, g.mapHeight)
-
-	g.player = Player{
-		x:         cellSize*1 + cellSize/2,
-		y:         cellSize*1 + cellSize/2,
-		angle:     0,
-		moveSpeed: cellSize / 12.0,
-		turnSpeed: math.Pi / 70,
-	}
-
-	if err := ebiten.RunGame(g); err != nil {
-		log.Fatal(err)
-	}
+// ===========================================================
+// Collision detection with map cells
+// ===========================================================
+func (g *Game) checkCollision(x, y float64) int {
+	// NOTE: Bounds checking is not done, the map must have an outer wall
+	mapCellX := int(x / cellSize)
+	mapCellY := int(y / cellSize)
+	return g.mapdata[mapCellX][mapCellY]
 }
 
-func textureColumn(img *ebiten.Image, x int) *ebiten.Image {
-	_, h := img.Size()
-	i := img.SubImage(image.Rect(x, 0, x+1, h))
-	return i.(*ebiten.Image)
-}
-
-func loadMap(filename string) [][]int {
-	var mapdata = make([][]int, mapSize)
-	for i := range mapdata {
-		mapdata[i] = make([]int, mapSize)
-	}
-
-	file, err := os.Open("./map.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	y := 0
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		log.Println(line)
-
-		for x, c := range line {
-			i, err := strconv.Atoi(string(c))
-			if err != nil {
-				mapdata[x][y] = 0
-			} else {
-				mapdata[x][y] = i
-			}
-		}
-		y++
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	return mapdata
-}
-
+// ===========================================================
+// Handle the map overlay
+// ===========================================================
 func overlay(screen *ebiten.Image, g *Game) {
+	if !overlayShown {
+		return
+	}
+
+	overlayImage.Fill(color.RGBA{0x00, 0x00, 0x00, 0x00})
+	px := g.player.x / float64(cellSize/overlayCellSize)
+	py := g.player.y / float64(cellSize/overlayCellSize)
+
 	// Draw the player
-	ebitenutil.DrawRect(screen, float64(g.player.x-4), float64(g.player.y-4), 8, 8, color.RGBA{255, 255, 255, 255})
+	ebitenutil.DrawRect(overlayImage, px-1, py-1, 3, 3, color.RGBA{255, 255, 255, 255})
 
 	// Draw the map
 	for y := 0; y < g.mapHeight; y++ {
 		for x := 0; x < g.mapWidth; x++ {
 			if g.mapdata[x][y] != 0 {
-				ebitenutil.DrawRect(screen, float64(x*cellSize), float64(y*cellSize), float64(cellSize), float64(cellSize), color.RGBA{255, 255, 255, 58})
+				ebitenutil.DrawRect(overlayImage, float64(x*overlayCellSize), float64(y*overlayCellSize), float64(overlayCellSize), float64(overlayCellSize), color.RGBA{255, 255, 255, 58})
 			}
 		}
 	}
+
+	w, h := overlayImage.Size()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(float64(winWidth)/float64(w)*overlayZoom, float64(winHeight)/float64(h)*overlayZoom)
+	screen.DrawImage(overlayImage, op)
 }

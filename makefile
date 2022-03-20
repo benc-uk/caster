@@ -36,3 +36,10 @@ lint-fix: ## 🔍 Lint & format, will try to fix errors and modify code
 run: ## 🏃 Run application
 	@figlet $@ || true
 	air -c .air.toml
+
+windows: ## 💻 Bundle Windows version
+	@figlet $@
+	make build
+	cp bin/caster.exe /mnt/c/Temp/caster.exe
+	cp -r ./textures /mnt/c/Temp/textures
+	cp -r ./maps /mnt/c/Temp/maps

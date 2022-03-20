@@ -23,7 +23,7 @@ const textureSize = 32
 
 // Used by raycasting when rendering the view
 const viewDistance = cellSize * 10
-const viewRaysRatio = 1
+const viewRaysRatio = 1 // I think changing this now just causes problems
 const colHeightScale = winHeight / (cellSize / 2)
 const viewRays = winWidth / viewRaysRatio
 const rayStepT = 0.3
@@ -37,6 +37,8 @@ var wallImages []*ebiten.Image
 var spriteImages map[string]*ebiten.Image
 var floorImage *ebiten.Image
 var ceilImage *ebiten.Image
+
+var depthBuffer = make([]float64, viewRays)
 
 // ===========================================================
 // Load textures & sprites etc
@@ -72,7 +74,7 @@ func init() {
 // ===========================================================
 func main() {
 	ebiten.SetWindowSize(winWidth, winHeight)
-	ebiten.SetWindowTitle("Castle Caster")
+	ebiten.SetWindowTitle("Crypt Caster")
 
 	log.Printf("Starting game!")
 	g := &Game{}
@@ -81,7 +83,7 @@ func main() {
 		x:         cellSize*1 + cellSize/2,
 		y:         cellSize*1 + cellSize/2,
 		angle:     0,
-		moveSpeed: cellSize / 12.0,
+		moveSpeed: cellSize / 62.0,
 		turnSpeed: math.Pi / 70,
 		fov:       math.Pi / 3,
 	}
@@ -160,40 +162,48 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for i := 0; i < viewRays; i++ {
 		rayAngle := g.player.angle - g.player.fov/2 + g.player.fov*float64(i)/viewRays
 		t := 0.0
+		depthBuffer[i] = viewDistance
 		for t = 0.0; t < viewDistance; t += rayStepT {
 			cx := g.player.x + (t * math.Cos(rayAngle))
 			cy := g.player.y + (t * math.Sin(rayAngle))
 
 			colisionIndex := g.checkCollision(cx, cy)
-			// If wall was hit
-			if colisionIndex > 0 {
-				hitx := int(cx) % cellSize
-				hity := int(cy) % cellSize
-				texColumn := hitx
-				if hitx < 1 || hitx >= cellSize-1 {
-					texColumn = hity
-				}
-				texColumn = texColumn * textureSize / cellSize
-
-				// Get texture column at the hit point
-				textureColStrip := wallImages[colisionIndex].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
-
-				op := &ebiten.DrawImageOptions{}
-				colHeight := (winHeight / t) * colHeightScale / (math.Cos(rayAngle - g.player.angle))
-				op.GeoM.Scale(viewRaysRatio, colHeight/textureSize)
-				op.GeoM.Translate(float64(i)*float64(viewRaysRatio), winHeightHalf-colHeight/2)
-
-				// Some visual flair, scale to darkness and filter the texture
-				//op.Filter = ebiten.FilterLinear
-				dist := 1 - (t / viewDistance * 1.5)
-				dist *= 1.5
-
-				op.ColorM.Scale(dist, dist, dist, 1)
-				screen.DrawImage(textureColStrip, op)
-
-				// Important to stop!
-				break
+			if colisionIndex == 0 {
+				continue
 			}
+
+			// If wall was hit...
+
+			hitx := int(cx) % cellSize
+			hity := int(cy) % cellSize
+			texColumn := hitx
+			if hitx < 1 || hitx >= cellSize-1 {
+				texColumn = hity
+			}
+			texColumn = texColumn * textureSize / cellSize
+
+			// Get texture column at the hit point
+			textureColStrip := wallImages[colisionIndex].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+
+			op := &ebiten.DrawImageOptions{}
+			colHeight := (winHeight / t) * colHeightScale / (math.Cos(rayAngle - g.player.angle))
+			// Scale and place the strip
+			op.GeoM.Scale(viewRaysRatio, colHeight/textureSize)
+			op.GeoM.Translate(float64(i)*float64(viewRaysRatio), winHeightHalf-colHeight/2)
+
+			// Darken as we go further
+			distScale := 1 - (t / viewDistance)
+			distScale = distScale * distScale
+
+			// Draw the strip
+			op.ColorM.Scale(distScale, distScale, distScale, 1)
+			screen.DrawImage(textureColStrip, op)
+
+			//distT := t * math.Cos(rayAngle-g.player.angle)
+			//log.Printf("%f %t", distT, t)
+			depthBuffer[i] = t
+			// Important to stop!
+			break
 		}
 	}
 
@@ -212,7 +222,7 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 	const spriteImgSizeH = 16
 
 	// remove unnecessary periods from the relative direction
-	// I don't know what this really does
+	// I don't know what this really does, actually no fucking clue
 	for ; spriteDir-g.player.angle > math.Pi; spriteDir -= 2 * math.Pi {
 	}
 	for ; spriteDir-g.player.angle < -math.Pi; spriteDir += 2 * math.Pi {
@@ -220,13 +230,28 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 
 	spriteDist := math.Sqrt(math.Pow(g.player.x-sprite.x, 2) + math.Pow(g.player.y-sprite.y, 2))
 	spriteScale := (1 / spriteDist) * winHeight
-	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidth) + (winWidth / 2) - (spriteImgSizeH * spriteScale) // do not forget the 3D view takes only a half of the framebuffer
+	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidth) + (winWidth / 2) - (spriteImgSizeH * spriteScale)
+	centerX := hOffset + (spriteImgSizeH * spriteScale)
+	if centerX < 0 || centerX > winWidth {
+		return
+	}
+	if hOffset < 0 {
+		return
+	}
+
+	// TODO: Draw sprite in columns like the walls
+	if depthBuffer[int(centerX)] < spriteDist {
+		return
+	}
+
 	vOffset := winHeight/2.0 - (spriteImgSizeH / 2.0 * spriteScale)
 
 	spriteOp := &ebiten.DrawImageOptions{}
 	spriteOp.GeoM.Scale(spriteScale, spriteScale)
 	spriteOp.GeoM.Translate(hOffset, vOffset)
 	screen.DrawImage(spriteImages[sprite.id], spriteOp)
+	// DEBUG!!!
+	//ebitenutil.DrawRect(screen, hOffset+(spriteImgSizeH*spriteScale), vOffset+(spriteImgSizeH*spriteScale), 5, 5, color.RGBA{255, 0, 0, 255})
 }
 
 // ===========================================================

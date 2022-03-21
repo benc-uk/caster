@@ -7,16 +7,31 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+const spriteImgSize = 32
+const spriteImgSizeH = 16
+
+// Used for rendering sprites with occlusion
+var depthBuffer = make([]float64, viewRays)
+
 type Sprite struct {
-	x  float64
-	y  float64
-	id string
+	x     float64
+	y     float64
+	id    string
+	dist  float64
+	scale float64
 }
 
 // ===========================================================
 // Draws a sprite on the screen with correct depth
 // ===========================================================
 func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
+	const magicOffset = winHeight / (spriteImgSize + spriteImgSizeH)
+	if sprite.dist > viewDistance {
+		return
+	}
+
+	// Sizing and scaling based on depth
+	spriteScale := (1 / sprite.dist) * winHeight * sprite.scale
 	// Direction to player
 	spriteDir := math.Atan2(sprite.y-g.player.y, sprite.x-g.player.x)
 
@@ -25,10 +40,6 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 	}
 	for ; spriteDir-g.player.angle < -math.Pi; spriteDir += 2 * math.Pi {
 	}
-
-	// Sizing and scaling based on depth
-	spriteDist := math.Sqrt(math.Pow(g.player.x-sprite.x, 2) + math.Pow(g.player.y-sprite.y, 2))
-	spriteScale := (1 / spriteDist) * winHeight
 
 	// The X coordinate of the sprite
 	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidth) + (winWidth / 2) - (spriteImgSizeH * spriteScale)
@@ -40,7 +51,8 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 	}
 
 	// The Y coordinate of the sprite
-	vOffset := winHeight/2.0 - (spriteImgSizeH / 2.0 * spriteScale)
+	offsetToFloor := spriteImgSizeH * spriteScale * ((1 - sprite.scale) / sprite.scale)
+	vOffset := winHeight/2.0 - (magicOffset * spriteScale) + offsetToFloor
 
 	// To position the sprite
 	spriteOp := &ebiten.DrawImageOptions{}
@@ -55,7 +67,7 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 
 		// Check the depth buffer, and skip if the sprite is a wall
 		depthBufferX := math.Floor(spriteOp.GeoM.Element(0, 2)) / viewRaysRatio
-		if depthBufferX < 0 || depthBufferX >= viewRays || depthBuffer[int(depthBufferX)] < spriteDist {
+		if depthBufferX < 0 || depthBufferX >= viewRays || depthBuffer[int(depthBufferX)] < sprite.dist {
 			continue
 		}
 

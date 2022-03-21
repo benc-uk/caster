@@ -7,6 +7,7 @@ import (
 	_ "image/png"
 	"log"
 	"math"
+	"sort"
 	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,35 +16,43 @@ import (
 )
 
 // Global game constants
-const mapSize = 100
-const winWidth = 1024
-const winHeight = 768
-const winHeightHalf = winHeight / 2
-const cellSize = 36
-const textureSize = 32
-const spriteImgSize = 32
-const spriteImgSizeH = 16
-const floorScaleW = winWidth / 10.0
-const floorScaleH = winHeightHalf / 600.0
+const mapSize = 100                       // Number of grid cells, maps are assumed to be square
+const winWidth = 800                      // Game window width
+const winHeight = 600                     // Game window height
+const winHeightHalf = winHeight / 2       // Store half the height as we use it a lot
+const cellSize = 36                       // Important, how many units is each grid cell in world space
+const textureSize = 32                    // Wall texture size (square)
+const floorScaleW = winWidth / 10.0       // Used for drawing ceiling and floors
+const floorScaleH = winHeightHalf / 600.0 // Used for drawing ceiling and floors
 
 // Used by raycasting when rendering the view
-const viewDistance = cellSize * 10
-const viewRaysRatio = 4 // I think changing this now just causes problems
-const colHeightScale = winHeight / (cellSize / 2)
-const viewRays = winWidth / viewRaysRatio
-const rayStepT = 0.3
+const viewDistance = cellSize * 12                // How far player can see
+const viewRaysRatio = 2                           // Ratio of rays cast to screen width, higher number = less rays = faster
+const rayStepT = 0.3                              // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
+const colHeightScale = winHeight / (cellSize / 2) // Scales the height of walls
+const viewRays = winWidth / viewRaysRatio         // Number of rays to cast (see viewRaysRatio)
 
+// Used for the map overlay view
 var overlayCellSize = cellSize / 4
 var overlayImage = ebiten.NewImage(mapSize*overlayCellSize, mapSize*overlayCellSize)
-var overlayZoom = 1.0
+var overlayZoom = 5.0
 var overlayShown = false
 
+// Global texture and sprite caches
 var wallImages []*ebiten.Image
 var spriteImages map[string]*ebiten.Image
 var floorImage *ebiten.Image
 var ceilImage *ebiten.Image
 
-var depthBuffer = make([]float64, viewRays)
+// Holds most core game data
+type Game struct {
+	mapdata   [][]int  // Map data is stored in a 2D array, 0 = empty, 1+ = wall
+	mapWidth  int      // Held as convenience
+	mapHeight int      // Held as convenience
+	player    Player   // Player object
+	level     int      // Which level we're on
+	sprites   []Sprite // Any sprites on the map
+}
 
 // ===========================================================
 // Load textures & sprites etc
@@ -62,14 +71,20 @@ func init() {
 	}
 
 	log.Printf("Loading sprites...")
-	for _, spriteId := range []string{"ghoul", "skeleton", "thing"} {
-		spriteImages[spriteId], _, err = ebitenutil.NewImageFromFile("./monsters/" + spriteId + ".png")
+	for _, spriteID := range []string{"ghoul", "skeleton", "thing"} {
+		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/m_" + spriteID + ".png")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	for _, spriteID := range []string{"potion", "ball"} {
+		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/i_" + spriteID + ".png")
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	log.Printf("Loading floor & ceiling texture...")
+	log.Printf("Loading floor & ceiling textures...")
 	floorImage, _, _ = ebitenutil.NewImageFromFile("./textures/floor.png")
 	ceilImage, _, _ = ebitenutil.NewImageFromFile("./textures/ceil.png")
 }
@@ -78,6 +93,7 @@ func init() {
 // Entry point
 // ===========================================================
 func main() {
+	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowSize(winWidth, winHeight)
 	ebiten.SetWindowTitle("Crypt Caster")
 
@@ -221,24 +237,32 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Sprite rendering loop
+	// Sprite rendering loop(s)...
+	// Update distances
+	for i, sprite := range g.sprites {
+		g.sprites[i].dist = math.Sqrt(math.Pow(g.player.x-sprite.x, 2) + math.Pow(g.player.y-sprite.y, 2))
+	}
+	// TODO: Can we optimize here?
+	sort.Slice(g.sprites, func(i, j int) bool {
+		return g.sprites[i].dist > g.sprites[j].dist
+	})
+	// Now render sprites
 	for _, sprite := range g.sprites {
 		drawSprite(screen, g, sprite)
 	}
 
-	// overlay map
+	// Overlay map
 	overlay(screen, g)
 
 	msg := fmt.Sprintf("FPS: %0.2f\n", ebiten.CurrentFPS())
 	ebitenutil.DebugPrint(screen, msg)
-
 }
 
 // ===========================================================
 // Required by ebiten
 // ===========================================================
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+	return 800, 600
 }
 
 // ===========================================================
@@ -266,6 +290,16 @@ func overlay(screen *ebiten.Image, g *Game) {
 	// Draw the player
 	ebitenutil.DrawRect(overlayImage, px-1, py-1, 3, 3, color.RGBA{255, 255, 255, 255})
 
+	// draw sprites
+	for _, sprite := range g.sprites {
+		sx := sprite.x / float64(cellSize/overlayCellSize)
+		sy := sprite.y / float64(cellSize/overlayCellSize)
+		c := color.RGBA{255, 0, 0, 255}
+		if sprite.id == "potion" {
+			c = color.RGBA{0, 255, 0, 255}
+		}
+		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
+	}
 	// Draw the map
 	for y := 0; y < g.mapHeight; y++ {
 		for x := 0; x < g.mapWidth; x++ {

@@ -34,7 +34,7 @@ func loadMap(filename string, g *Game) {
 				g.mapdata[x][y] = 0
 
 				// Player
-				if c == 'P' {
+				if c == '*' {
 					g.player.x = float64(x)*cellSize + cellSize/2
 					g.player.y = float64(y)*cellSize + cellSize/2
 				}
@@ -42,8 +42,9 @@ func loadMap(filename string, g *Game) {
 				// Monsters
 				if c == 'g' || c == 's' || c == 't' {
 					s := Sprite{
-						x: float64(x)*cellSize + cellSize/2,
-						y: float64(y)*cellSize + cellSize/2,
+						x:     float64(x)*cellSize + cellSize/2,
+						y:     float64(y)*cellSize + cellSize/2,
+						scale: 1,
 					}
 					switch c {
 					case 'g':
@@ -52,6 +53,23 @@ func loadMap(filename string, g *Game) {
 						s.id = "skeleton"
 					case 't':
 						s.id = "thing"
+					}
+					g.sprites = append(g.sprites, s)
+				}
+
+				// Items
+				if c == 'P' || c == 'B' {
+					s := Sprite{
+						x: float64(x)*cellSize + cellSize/2,
+						y: float64(y)*cellSize + cellSize/2,
+					}
+					switch c {
+					case 'P':
+						s.id = "potion"
+						s.scale = 0.3
+					case 'B':
+						s.id = "ball"
+						s.scale = 0.4
 					}
 					g.sprites = append(g.sprites, s)
 				}

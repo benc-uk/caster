@@ -12,9 +12,6 @@
 *.out
 
 # Things we don't want
-**.png
-!img/*.png
 **.exe
 cmd/cmd
-/fract
 bin/**

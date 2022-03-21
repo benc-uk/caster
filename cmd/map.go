@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 )
@@ -43,10 +42,8 @@ func loadMap(filename string, g *Game) {
 				// Monsters
 				if c == 'g' || c == 's' || c == 't' {
 					s := Sprite{
-						x:     float64(x)*cellSize + cellSize/2,
-						y:     float64(y)*cellSize + cellSize/2,
-						scale: 1,
-						dir:   -rand.Float64() * 2,
+						x: float64(x)*cellSize + cellSize/2,
+						y: float64(y)*cellSize + cellSize/2,
 					}
 					switch c {
 					case 'g':
@@ -56,6 +53,7 @@ func loadMap(filename string, g *Game) {
 					case 't':
 						s.id = "thing"
 					}
+					s.image = spriteImages[s.id]
 					g.sprites = append(g.sprites, s)
 				}
 
@@ -68,11 +66,10 @@ func loadMap(filename string, g *Game) {
 					switch c {
 					case 'P':
 						s.id = "potion"
-						s.scale = 1
 					case 'B':
 						s.id = "ball"
-						s.scale = 1
 					}
+					s.image = spriteImages[s.id]
 					g.sprites = append(g.sprites, s)
 				}
 			} else {

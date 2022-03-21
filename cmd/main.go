@@ -19,19 +19,20 @@ import (
 // Global game constants
 const mapSize = 100                       // Number of grid cells, maps are assumed to be square
 const winWidth = 1024                     // Game window width - DON'T CHANGE
-const winHeight = 768                     // Game window height- DON'T CHANGE
+const winHeight = 768                     // Game window height - DON'T CHANGE
 const winHeightHalf = winHeight / 2       // Store half the height as we use it a lot
-const cellSize = 36                       // Important, how many units is each grid cell in world space
+const cellSize = 32                       // Important, how many units is each grid cell in world space - DON'T CHANGE
 const textureSize = 32                    // Wall texture size (square)
 const floorScaleW = winWidth / 10.0       // Used for drawing ceiling and floors
 const floorScaleH = winHeightHalf / 600.0 // Used for drawing ceiling and floors
+const fov = math.Pi / 3
 
 // Used by raycasting when rendering the view
-const viewDistance = cellSize * 12                // How far player can see
-const viewRaysRatio = 1                           // Ratio of rays cast to screen width, higher number = less rays = faster
-const rayStepT = 0.3                              // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
-const colHeightScale = winHeight / (cellSize / 2) // Scales the height of walls
-const viewRays = winWidth / viewRaysRatio         // Number of rays to cast (see viewRaysRatio)
+const viewDistance = cellSize * 12                      // How far player can see
+const viewRaysRatio = 1                                 // Ratio of rays cast to screen width, higher number = less rays = faster
+const rayStepT = 0.3                                    // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
+const colHeightScale = (winHeight / (cellSize / 1.666)) // Scales the height of walls
+const viewRays = winWidth / viewRaysRatio               // Number of rays to cast (see viewRaysRatio)
 
 // Used for the map overlay view
 var overlayCellSize = cellSize / 4
@@ -98,7 +99,7 @@ func main() {
 	ebiten.SetWindowTitle("Crypt Caster")
 	ebiten.SetWindowResizable(true)
 
-	log.Printf("Starting game!")
+	log.Printf("Starting game! %f", fov)
 	g := &Game{}
 
 	g.player = Player{
@@ -107,7 +108,7 @@ func main() {
 		angle:     0,
 		moveSpeed: cellSize / 10.0,
 		turnSpeed: math.Pi / 70,
-		fov:       math.Pi / 3,
+		fov:       fov,
 	}
 
 	g.level = 1
@@ -133,12 +134,14 @@ func (g *Game) Update() error {
 		g.player.angle -= g.player.turnSpeed
 	}
 
-	for i := range g.sprites {
-		if g.checkCollision(g.sprites[i].x+g.sprites[i].dir, g.sprites[i].y) > 0 {
-			g.sprites[i].dir = -g.sprites[i].dir
-		}
-		g.sprites[i].x += g.sprites[i].dir
-	}
+	// TODO: Placeholder, replace with actual movement
+	// for i := range g.sprites {
+	// 	if g.checkCollision(g.sprites[i].x+g.sprites[i].dir, g.sprites[i].y) > 0 {
+	// 		g.sprites[i].dir = -g.sprites[i].dir
+	// 	}
+	// 	g.sprites[i].x += g.sprites[i].dir
+	// }
+
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) {
 		ms := g.player.moveSpeed
 		cs := cellSize / 3.0
@@ -273,7 +276,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // Required by ebiten
 // ===========================================================
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 1024, 768
+	return outsideWidth, outsideHeight
+	//return 1024, 768
 }
 
 // ===========================================================

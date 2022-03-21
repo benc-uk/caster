@@ -18,9 +18,3 @@ type Player struct {
 	turnSpeed float64
 	fov       float64
 }
-
-type Sprite struct {
-	x  float64
-	y  float64
-	id string
-}

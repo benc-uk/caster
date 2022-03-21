@@ -19,19 +19,20 @@ type Sprite struct {
 	id    string
 	dist  float64
 	scale float64
+	dir   float64
 }
 
 // ===========================================================
 // Draws a sprite on the screen with correct depth
 // ===========================================================
 func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
-	const magicOffset = winHeight / (spriteImgSize + spriteImgSizeH)
 	if sprite.dist > viewDistance {
 		return
 	}
 
 	// Sizing and scaling based on depth
-	spriteScale := (1 / sprite.dist) * winHeight * sprite.scale
+	spriteDist := (1.0 / sprite.dist)
+	spriteScale := spriteDist * winHeight
 	// Direction to player
 	spriteDir := math.Atan2(sprite.y-g.player.y, sprite.x-g.player.x)
 
@@ -51,8 +52,8 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 	}
 
 	// The Y coordinate of the sprite
-	offsetToFloor := spriteImgSizeH * spriteScale * ((1 - sprite.scale) / sprite.scale)
-	vOffset := winHeight/2.0 - (magicOffset * spriteScale) + offsetToFloor
+	// HACK: This only works when the screen height is 1024, I've lost DAYS trying to fix it
+	vOffset := winHeight/2.0 - (spriteImgSize*spriteDist*colHeightScale)*5.3
 
 	// To position the sprite
 	spriteOp := &ebiten.DrawImageOptions{}

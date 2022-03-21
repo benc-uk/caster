@@ -15,10 +15,11 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+//640×480, 800×600, 960×720, 1024×768, 1280×960, 1400×1050, 1440×1080, 1600×1200
 // Global game constants
 const mapSize = 100                       // Number of grid cells, maps are assumed to be square
-const winWidth = 800                      // Game window width
-const winHeight = 600                     // Game window height
+const winWidth = 1024                     // Game window width - DON'T CHANGE
+const winHeight = 768                     // Game window height- DON'T CHANGE
 const winHeightHalf = winHeight / 2       // Store half the height as we use it a lot
 const cellSize = 36                       // Important, how many units is each grid cell in world space
 const textureSize = 32                    // Wall texture size (square)
@@ -27,7 +28,7 @@ const floorScaleH = winHeightHalf / 600.0 // Used for drawing ceiling and floors
 
 // Used by raycasting when rendering the view
 const viewDistance = cellSize * 12                // How far player can see
-const viewRaysRatio = 2                           // Ratio of rays cast to screen width, higher number = less rays = faster
+const viewRaysRatio = 1                           // Ratio of rays cast to screen width, higher number = less rays = faster
 const rayStepT = 0.3                              // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
 const colHeightScale = winHeight / (cellSize / 2) // Scales the height of walls
 const viewRays = winWidth / viewRaysRatio         // Number of rays to cast (see viewRaysRatio)
@@ -93,9 +94,9 @@ func init() {
 // Entry point
 // ===========================================================
 func main() {
-	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowSize(winWidth, winHeight)
 	ebiten.SetWindowTitle("Crypt Caster")
+	ebiten.SetWindowResizable(true)
 
 	log.Printf("Starting game!")
 	g := &Game{}
@@ -132,18 +133,29 @@ func (g *Game) Update() error {
 		g.player.angle -= g.player.turnSpeed
 	}
 
+	for i := range g.sprites {
+		if g.checkCollision(g.sprites[i].x+g.sprites[i].dir, g.sprites[i].y) > 0 {
+			g.sprites[i].dir = -g.sprites[i].dir
+		}
+		g.sprites[i].x += g.sprites[i].dir
+	}
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) {
 		ms := g.player.moveSpeed
+		cs := cellSize / 3.0
 		if ebiten.IsKeyPressed(ebiten.KeyDown) {
 			ms = -g.player.moveSpeed
+			cs = -cs
+		}
+
+		// Check a little further ahead to see if we're going to collide with a wall
+		xc := g.player.x + math.Cos(g.player.angle)*cs
+		yc := g.player.y + math.Sin(g.player.angle)*cs
+		if g.checkCollision(xc, yc) > 0 {
+			return nil
 		}
 
 		x := g.player.x + math.Cos(g.player.angle)*ms
 		y := g.player.y + math.Sin(g.player.angle)*ms
-		if g.checkCollision(x, y) > 0 {
-			return nil
-		}
-
 		g.player.x = x
 		g.player.y = y
 	}
@@ -167,7 +179,6 @@ func (g *Game) Update() error {
 // Main draw function
 // ===========================================================
 func (g *Game) Draw(screen *ebiten.Image) {
-
 	// Render the ceiling and floor
 	floorOp := &ebiten.DrawImageOptions{}
 	floorOp.GeoM.Scale(floorScaleW, floorScaleH)
@@ -254,7 +265,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	overlay(screen, g)
 
-	msg := fmt.Sprintf("FPS: %0.2f\n", ebiten.CurrentFPS())
+	msg := fmt.Sprintf("FPS: %0.2f\n%dx%d\n\nPlayer: %f,%f", ebiten.CurrentFPS(), winWidth, winHeight, g.player.x, g.player.y)
 	ebitenutil.DebugPrint(screen, msg)
 }
 
@@ -262,7 +273,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // Required by ebiten
 // ===========================================================
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 800, 600
+	return 1024, 768
 }
 
 // ===========================================================

@@ -41,5 +41,6 @@ windows: ## 💻 Bundle Windows version
 	@figlet $@
 	make build
 	cp bin/caster.exe /mnt/c/Temp/caster.exe
-	cp -r ./textures /mnt/c/Temp/textures
-	cp -r ./maps /mnt/c/Temp/maps
+	cp -r ./textures /mnt/c/Temp/
+	cp -r ./sprites /mnt/c/Temp/
+	cp -r ./maps /mnt/c/Temp/

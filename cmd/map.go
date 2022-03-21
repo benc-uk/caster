@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 )
@@ -45,6 +46,7 @@ func loadMap(filename string, g *Game) {
 						x:     float64(x)*cellSize + cellSize/2,
 						y:     float64(y)*cellSize + cellSize/2,
 						scale: 1,
+						dir:   -rand.Float64() * 2,
 					}
 					switch c {
 					case 'g':
@@ -66,10 +68,10 @@ func loadMap(filename string, g *Game) {
 					switch c {
 					case 'P':
 						s.id = "potion"
-						s.scale = 0.3
+						s.scale = 1
 					case 'B':
 						s.id = "ball"
-						s.scale = 0.4
+						s.scale = 1
 					}
 					g.sprites = append(g.sprites, s)
 				}

@@ -3,8 +3,8 @@ tmp_dir = "tmp"
 
 [build]
 include_ext = [ "go" ]
-include_dir = [ "cmd" ]
-cmd = "go build -o ./tmp/main ./cmd/..."
+include_dir = [ "main" ]
+cmd = "go build -o ./tmp/main ./main/..."
 
 [misc]
 clean_on_exit = true

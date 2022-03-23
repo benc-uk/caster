@@ -42,8 +42,10 @@ func loadMap(filename string, g *Game) {
 				// Monsters
 				if c == 'g' || c == 's' || c == 't' {
 					s := Sprite{
-						x: float64(x)*cellSize + cellSize/2,
-						y: float64(y)*cellSize + cellSize/2,
+						x:     float64(x)*cellSize + cellSize/2,
+						y:     float64(y)*cellSize + cellSize/2,
+						angle: 1.0,
+						speed: 2,
 					}
 					switch c {
 					case 'g':

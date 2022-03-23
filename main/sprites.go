@@ -9,17 +9,17 @@ import (
 
 const spriteImgSize = 32
 const spriteImgSizeH = 16
-const spriteMagic = 6.3
+
+//const spriteMagic = 6.3
 
 // Used for rendering sprites with occlusion
 var depthBuffer = make([]float64, viewRays)
 
 type Sprite struct {
-	x    float64
-	y    float64
-	id   string
-	dist float64
-	//scale float64
+	x     float64
+	y     float64
+	id    string
+	dist  float64 // distance to player, updated during the render cycle
 	angle float64
 	speed float64
 	image *ebiten.Image
@@ -35,7 +35,7 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 
 	// Sizing and scaling based on depth
 	spriteDist := (1.0 / sprite.dist)
-	spriteScale := spriteDist * winHeight
+	spriteScale := spriteDist * float64(winHeight)
 	// Direction to player
 	spriteDir := math.Atan2(sprite.y-g.player.y, sprite.x-g.player.x)
 
@@ -55,8 +55,8 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 	}
 
 	// The Y coordinate of the sprite
-	// HACK: This only works when the screen height is 1024, I've lost DAYS trying to fix it
-	vOffset := winHeightHalf - spriteImgSize*colHeightScale*spriteDist*spriteMagic
+	// HACK: HERE BE EVIL! 😈 This only works when the screen height is 1024, I've lost DAYS trying to fix it
+	vOffset := winHeightHalf - spriteImgSize*magicWall*spriteDist*magicSprite
 
 	// To position the sprite
 	spriteOp := &ebiten.DrawImageOptions{}

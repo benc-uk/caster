@@ -15,11 +15,11 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-//640×480, 800×600, 960×720, 1024×768, 1280×960, 1400×1050, 1440×1080, 1600×1200
+// 800×600, 1024×768, 1280×960, 1440×1080, 1600×1200
 // Global game constants
 const mapSize = 100                       // Number of grid cells, maps are assumed to be square
-const winWidth = 1024                     // Game window width - DON'T CHANGE
-const winHeight = 768                     // Game window height - DON'T CHANGE
+const winWidth = 640                      // Game window width - DON'T CHANGE
+const winHeight = 480                     // Game window height - DON'T CHANGE
 const winHeightHalf = winHeight / 2       // Store half the height as we use it a lot
 const cellSize = 32                       // Important, how many units is each grid cell in world space - DON'T CHANGE
 const textureSize = 32                    // Wall texture size (square)
@@ -28,11 +28,12 @@ const floorScaleH = winHeightHalf / 600.0 // Used for drawing ceiling and floors
 const fov = math.Pi / 3
 
 // Used by raycasting when rendering the view
-const viewDistance = cellSize * 12                      // How far player can see
-const viewRaysRatio = 1                                 // Ratio of rays cast to screen width, higher number = less rays = faster
-const rayStepT = 0.3                                    // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
-const colHeightScale = (winHeight / (cellSize / 1.666)) // Scales the height of walls
-const viewRays = winWidth / viewRaysRatio               // Number of rays to cast (see viewRaysRatio)
+const viewDistance = cellSize * 12        // How far player can see
+const viewRaysRatio = 2                   // Ratio of rays cast to screen width, higher number = less rays = faster
+const rayStepT = 0.3                      // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
+const viewRays = winWidth / viewRaysRatio // Number of rays to cast (see viewRaysRatio)
+var magicWall = 0.0
+var magicSprite = 0.0
 
 // Used for the map overlay view
 var overlayCellSize = cellSize / 4
@@ -95,6 +96,29 @@ func init() {
 // Entry point
 // ===========================================================
 func main() {
+	winWidth = 800
+	winHeight = 600
+	switch winHeight {
+	case 480:
+		magicWall = winHeight / (cellSize / 2.6)
+		magicSprite = 4
+	case 600:
+		magicWall = winHeight / (cellSize / 2.1)
+		magicSprite = 5.2
+	case 768:
+		magicWall = winHeight / (cellSize / 1.666)
+		magicSprite = 6.3
+	case 960:
+		magicWall = winHeight / (cellSize / 1.3)
+		magicSprite = 8.3
+	case 1080:
+		magicWall = winHeight / (cellSize / 1.16)
+		magicSprite = 10
+	case 1200:
+		magicWall = winHeight / (cellSize / 1.04)
+		magicSprite = 11
+	}
+
 	ebiten.SetWindowSize(winWidth, winHeight)
 	ebiten.SetWindowTitle("Crypt Caster")
 	ebiten.SetWindowResizable(true)
@@ -126,26 +150,29 @@ func main() {
 // Update loop handles inputs
 // ===========================================================
 func (g *Game) Update() error {
-	if ebiten.IsKeyPressed(ebiten.KeyRight) {
+	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		g.player.angle += g.player.turnSpeed
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 		g.player.angle -= g.player.turnSpeed
 	}
 
 	// TODO: Placeholder, replace with actual movement
 	// for i := range g.sprites {
-	// 	if g.checkCollision(g.sprites[i].x+g.sprites[i].dir, g.sprites[i].y) > 0 {
-	// 		g.sprites[i].dir = -g.sprites[i].dir
+	// 	xs := g.sprites[i].x + math.Cos(g.sprites[i].angle)*g.sprites[i].speed
+	// 	ys := g.sprites[i].y + math.Sin(g.sprites[i].angle)*g.sprites[i].speed
+	// 	if g.checkCollision(xs, ys) > 0 {
+	// 		g.sprites[i].angle += math.Pi
 	// 	}
-	// 	g.sprites[i].x += g.sprites[i].dir
+	// 	g.sprites[i].x = xs
+	// 	g.sprites[i].y = ys
 	// }
 
-	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) {
+	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		ms := g.player.moveSpeed
 		cs := cellSize / 3.0
-		if ebiten.IsKeyPressed(ebiten.KeyDown) {
+		if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 			ms = -g.player.moveSpeed
 			cs = -cs
 		}
@@ -230,7 +257,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 			// Scale the height of rendered wall strip to the distance and correct fish-eye effect
 			// This is the heart of the 3D effect in the game
-			colHeight := (winHeight / t) * colHeightScale / (math.Cos(rayAngle - g.player.angle))
+			colHeight := (winHeight / t) * magicWall / (math.Cos(rayAngle - g.player.angle))
 			// Scale and place the strip
 			op.GeoM.Scale(viewRaysRatio, colHeight/textureSize)
 			op.GeoM.Translate(float64(i)*float64(viewRaysRatio), winHeightHalf-colHeight/2)
@@ -276,7 +303,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // Required by ebiten
 // ===========================================================
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+	return winWidth, winHeight
 	//return 1024, 768
 }
 

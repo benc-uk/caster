@@ -1,4 +1,4 @@
-SRC_DIR := cmd
+SRC_DIR := main
 GO_PKG := github.com/benc-uk/caster
 
 # Things you don't want to change

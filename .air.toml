@@ -5,6 +5,7 @@ tmp_dir = "tmp"
 include_ext = [ "go" ]
 include_dir = [ "main" ]
 cmd = "go build -o ./tmp/main ./main/..."
+full_bin = "./tmp/main medium"
 
 [misc]
 clean_on_exit = true

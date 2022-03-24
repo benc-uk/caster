@@ -10,10 +10,8 @@ import (
 const spriteImgSize = 32
 const spriteImgSizeH = 16
 
-//const spriteMagic = 6.3
-
 // Used for rendering sprites with occlusion
-var depthBuffer = make([]float64, viewRays)
+var depthBuffer []float64
 
 type Sprite struct {
 	x     float64
@@ -22,6 +20,7 @@ type Sprite struct {
 	dist  float64 // distance to player, updated during the render cycle
 	angle float64
 	speed float64
+	size  float64
 	image *ebiten.Image
 }
 
@@ -45,18 +44,20 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 	for ; spriteDir-g.player.angle < -math.Pi; spriteDir += 2 * math.Pi {
 	}
 
+	winWidthF := float64(winWidth)
+	winHeightHalfF := float64(winHeightHalf)
 	// The X coordinate of the sprite
-	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidth) + (winWidth / 2) - (spriteImgSizeH * spriteScale)
+	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidthF) + (winWidthF / 2) - (spriteImgSizeH * spriteScale)
 
 	// TODO: Remove this? - Crude culling
 	centerX := hOffset + (spriteImgSizeH * spriteScale)
-	if centerX < 0 || centerX > winWidth {
+	if centerX < 0 || centerX > winWidthF {
 		return
 	}
 
 	// The Y coordinate of the sprite
 	// HACK: HERE BE EVIL! 😈 This only works when the screen height is 1024, I've lost DAYS trying to fix it
-	vOffset := winHeightHalf - spriteImgSize*magicWall*spriteDist*magicSprite
+	vOffset := winHeightHalfF - spriteImgSize*magicWall*spriteDist*magicSprite
 
 	// To position the sprite
 	spriteOp := &ebiten.DrawImageOptions{}
@@ -70,7 +71,7 @@ func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
 		spriteOp.GeoM.Translate(spriteScale, 0)
 
 		// Check the depth buffer, and skip if the sprite is a wall
-		depthBufferX := math.Floor(spriteOp.GeoM.Element(0, 2)) / viewRaysRatio
+		depthBufferX := int(math.Floor(spriteOp.GeoM.Element(0, 2)) / viewRaysRatio)
 		if depthBufferX < 0 || depthBufferX >= viewRays || depthBuffer[int(depthBufferX)] < sprite.dist {
 			continue
 		}

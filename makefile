@@ -44,3 +44,4 @@ windows: ## 💻 Bundle Windows version
 	cp -r ./textures /mnt/c/Temp/
 	cp -r ./sprites /mnt/c/Temp/
 	cp -r ./maps /mnt/c/Temp/
+	cp -r ./sounds /mnt/c/Temp/

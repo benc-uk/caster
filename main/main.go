@@ -42,7 +42,6 @@ var overlayShown = false
 
 // Global texture and sprite caches
 var wallImages []*ebiten.Image
-var spriteImages map[string]*ebiten.Image
 var floorImage *ebiten.Image
 var ceilImage *ebiten.Image
 
@@ -54,27 +53,15 @@ func init() {
 	wallImages = make([]*ebiten.Image, 10)
 	spriteImages = make(map[string]*ebiten.Image, 10)
 
-	log.Printf("Loading textures...")
-	for i := 1; i < 5; i++ {
+	log.Printf("Loading wall textures...")
+	for i := 1; i < 10; i++ {
 		wallImages[i], _, err = ebitenutil.NewImageFromFile("./textures/" + strconv.Itoa(i) + ".png")
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	log.Printf("Loading sprites...")
-	for _, spriteID := range []string{"ghoul", "skeleton", "thing"} {
-		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/m_" + spriteID + ".png")
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	for _, spriteID := range []string{"potion", "ball"} {
-		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/i_" + spriteID + ".png")
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	initSprites()
 
 	log.Printf("Loading floor & ceiling textures...")
 	floorImage, _, _ = ebitenutil.NewImageFromFile("./textures/floor.png")
@@ -140,7 +127,10 @@ func main() {
 	ebiten.SetWindowResizable(true)
 
 	log.Printf("Starting game!")
-	g := &Game{}
+	g := &Game{
+		sprites:  make([]Sprite, 0),
+		monsters: make([]Monster, 0),
+	}
 
 	g.player = newPlayer(g)
 	log.Printf("Player created %+v", g.player)

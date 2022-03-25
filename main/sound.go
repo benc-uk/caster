@@ -17,7 +17,7 @@ func initSound() {
 
 	audioCtx = audio.NewContext(44100)
 
-	for _, sound := range []string{"footstep", "woohoo"} {
+	for _, sound := range []string{"footstep", "woohoo", "door_open", "grunt"} {
 		f, err := os.Open("./sounds/" + sound + ".wav")
 		if err != nil {
 			log.Fatal(err)

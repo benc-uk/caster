@@ -14,12 +14,13 @@ import (
 
 // Holds most core game data
 type Game struct {
-	mapdata   [][]int  // Map data is stored in a 2D array, 0 = empty, 1+ = wall
-	mapWidth  int      // Held as convenience
-	mapHeight int      // Held as convenience
-	player    Player   // Player object
-	level     int      // Which level we're on
-	sprites   []Sprite // Any sprites on the map
+	mapdata   [][]int   // Map data is stored in a 2D array, 0 = empty, 1+ = wall
+	mapWidth  int       // Held as convenience
+	mapHeight int       // Held as convenience
+	player    Player    // Player object
+	level     int       // Which level we're on
+	sprites   []Sprite  // Any sprites on the map
+	monsters  []Monster // Monsters on the map
 	fc        int
 }
 
@@ -35,17 +36,21 @@ func (g *Game) Update() error {
 		g.player.angle -= g.player.turnSpeed
 	}
 
-	// TODO: Placeholder, replace with actual movement
-	for i := range g.sprites {
-		xs := g.sprites[i].x + math.Cos(g.sprites[i].angle)*g.sprites[i].speed
-		ys := g.sprites[i].y + math.Sin(g.sprites[i].angle)*g.sprites[i].speed
-		if g.getWallAt(xs, ys) > 0 {
-			g.sprites[i].angle += math.Pi / 2
-			playSound("woohoo")
-		}
-		g.sprites[i].x = xs
-		g.sprites[i].y = ys
+	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		g.player.use()
 	}
+
+	// TODO: Placeholder, replace with actual movement
+	// for i := range g.sprites {
+	// 	xs := g.sprites[i].x + math.Cos(g.sprites[i].angle)*g.sprites[i].speed
+	// 	ys := g.sprites[i].y + math.Sin(g.sprites[i].angle)*g.sprites[i].speed
+	// 	if g.getWallAt(xs, ys) > 0 {
+	// 		g.sprites[i].angle += math.Pi / 2
+	// 		playSound("woohoo")
+	// 	}
+	// 	g.sprites[i].x = xs
+	// 	g.sprites[i].y = ys
+	// }
 
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		ms := g.player.moveSpeed
@@ -57,7 +62,7 @@ func (g *Game) Update() error {
 		newY := g.player.y + math.Sin(g.player.angle)*ms
 
 		// Check if we're going to collide with a wall
-		if g.player.checkWallCollision(newX, newY) {
+		if wall := g.player.checkWallCollision(newX, newY); wall > 0 {
 			return nil
 		}
 
@@ -157,9 +162,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Sprite rendering loop(s)...
-	// Update distances
-	for i, sprite := range g.sprites {
-		g.sprites[i].dist = math.Sqrt(math.Pow(g.player.x-sprite.x, 2) + math.Pow(g.player.y-sprite.y, 2))
+	// Update monster distances
+	for i := range g.sprites {
+		g.sprites[i].dist = math.Sqrt(math.Pow(g.player.x-g.sprites[i].x, 2) + math.Pow(g.player.y-g.sprites[i].y, 2))
 	}
 	// TODO: Can we optimize here?
 	sort.Slice(g.sprites, func(i, j int) bool {
@@ -220,6 +225,7 @@ func (g *Game) overlay(screen *ebiten.Image) {
 		}
 		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
 	}
+
 	// Draw the map
 	for y := 0; y < g.mapHeight; y++ {
 		for x := 0; x < g.mapWidth; x++ {

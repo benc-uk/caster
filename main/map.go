@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 )
 
@@ -23,57 +24,55 @@ func loadMap(filename string, g *Game) {
 	}
 	defer file.Close()
 
+	monsterRe := regexp.MustCompile("[a-z]")
+
 	y := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		for x, c := range line {
-			i, err := strconv.Atoi(string(c))
+		for x, char := range line {
+			i, err := strconv.Atoi(string(char))
 			if err != nil {
 				g.mapdata[x][y] = 0
 
 				// Player
-				if c == '*' {
+				if char == '*' {
 					g.player.x = float64(x)*cellSize + cellSize/2
 					g.player.y = float64(y)*cellSize + cellSize/2
 				}
 
-				// Monsters
-				if c == 'g' || c == 's' || c == 't' {
-					s := Sprite{
-						x:     float64(x)*cellSize + cellSize/2,
-						y:     float64(y)*cellSize + cellSize/2,
-						angle: 1.0,
-						speed: 2,
-					}
-					switch c {
+				if monsterRe.MatchString(string(char)) {
+					log.Printf("Found monster %s at %d,%d", string(char), x, y)
+					x := float64(x)*cellSize + cellSize/2
+					y := float64(y)*cellSize + cellSize/2
+
+					switch char {
 					case 'g':
-						s.id = "ghoul"
+						g.addMonster("ghoul", x, y, 2.35, 2.0, 1.0)
 					case 's':
-						s.id = "skeleton"
+						g.addMonster("skeleton", x, y, 1.0, 4.0, 1.0)
 					case 't':
-						s.id = "thing"
+						g.addMonster("thing", x, y, 1.7, 2.0, 1.0)
 					}
-					s.image = spriteImages[s.id]
-					g.sprites = append(g.sprites, s)
+
 				}
 
 				// Items
-				if c == 'P' || c == 'B' {
-					s := Sprite{
-						x: float64(x)*cellSize + cellSize/2,
-						y: float64(y)*cellSize + cellSize/2,
-					}
-					switch c {
-					case 'P':
-						s.id = "potion"
-					case 'B':
-						s.id = "ball"
-					}
-					s.image = spriteImages[s.id]
-					g.sprites = append(g.sprites, s)
-				}
+				// if c == 'P' || c == 'B' {
+				// 	s := Sprite{
+				// 		x: float64(x)*cellSize + cellSize/2,
+				// 		y: float64(y)*cellSize + cellSize/2,
+				// 	}
+				// 	switch c {
+				// 	case 'P':
+				// 		s.id = "potion"
+				// 	case 'B':
+				// 		s.id = "ball"
+				// 	}
+				// 	s.image = spriteImages[s.id]
+				// 	g.sprites = append(g.sprites, s)
+				// }
 			} else {
 				// Walls
 				g.mapdata[x][y] = i

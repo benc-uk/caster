@@ -28,18 +28,37 @@ func newPlayer(g *Game) Player {
 	}
 }
 
-func (p Player) checkWallCollision(x, y float64) bool {
-	if p.game.getWallAt(x+p.size, y) > 0 {
-		return true
+func (p Player) checkWallCollision(x, y float64) int {
+	if wall := p.game.getWallAt(x+p.size, y); wall > 0 {
+		return wall
 	}
-	if p.game.getWallAt(x-p.size, y) > 0 {
-		return true
+	if wall := p.game.getWallAt(x-p.size, y); wall > 0 {
+		return wall
 	}
-	if p.game.getWallAt(x, y+p.size) > 0 {
-		return true
+	if wall := p.game.getWallAt(x, y+p.size); wall > 0 {
+		return wall
 	}
-	if p.game.getWallAt(x, y-p.size) > 0 {
-		return true
+	if wall := p.game.getWallAt(x, y-p.size); wall > 0 {
+		return wall
 	}
-	return false
+	return 0
+}
+
+func (p Player) use() {
+	const useDist = cellSize
+	const normalDoor = 9
+	// const runeDoor = 8
+	newX := p.x + math.Cos(p.angle)*useDist
+	newY := p.y + math.Sin(p.angle)*useDist
+
+	// Check wall that was "used"
+	if wall := p.checkWallCollision(newX, newY); wall > 0 {
+		if wall == normalDoor {
+			p.game.mapdata[int(newX/cellSize)][int(newY/cellSize)] = 0
+			playSound("door_open")
+		} else {
+			playSound("grunt")
+		}
+	}
+
 }

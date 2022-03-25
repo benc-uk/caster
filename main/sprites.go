@@ -2,9 +2,11 @@ package main
 
 import (
 	"image"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 const spriteImgSize = 32
@@ -12,6 +14,7 @@ const spriteImgSizeH = 16
 
 // Used for rendering sprites with occlusion
 var depthBuffer []float64
+var spriteImages map[string]*ebiten.Image
 
 type Sprite struct {
 	x     float64
@@ -24,6 +27,52 @@ type Sprite struct {
 	image *ebiten.Image
 }
 
+func (g *Game) addSprite(id string, x, y float64, angle float64, speed float64, size float64) *Sprite {
+	if g.sprites == nil {
+		g.sprites = make([]Sprite, 0)
+	}
+
+	if spriteImages[id] == nil {
+		log.Printf("ERROR! Sprite image not found: %s", id)
+		return nil
+	}
+
+	s := Sprite{
+		x:     x,
+		y:     y,
+		id:    id,
+		angle: angle,
+		speed: speed,
+		size:  size,
+		image: spriteImages[id],
+	}
+
+	g.sprites = append(g.sprites, s)
+	return &s
+}
+
+// ===========================================================
+// Load sprites at startup
+// ===========================================================
+func initSprites() {
+	var err error
+
+	log.Printf("Loading sprites...")
+	for _, spriteID := range []string{"ghoul", "skeleton", "thing"} {
+		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/m_" + spriteID + ".png")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	for _, spriteID := range []string{"potion", "ball"} {
+		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/i_" + spriteID + ".png")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+//
 // ===========================================================
 // Draws a sprite on the screen with correct depth
 // ===========================================================

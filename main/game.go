@@ -31,9 +31,14 @@ func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		g.player.angle += g.player.turnSpeed
 	}
-
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 		g.player.angle -= g.player.turnSpeed
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
+		g.player.turnSpeed = math.Min(g.player.turnSpeed+g.player.turnSpeedAccel, g.player.turnSpeedMax)
+	} else {
+		g.player.turnSpeed = g.player.turnSpeedMin
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
@@ -57,12 +62,13 @@ func (g *Game) Update() error {
 		if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 			ms = -g.player.moveSpeed
 		}
+		g.player.moveSpeed = math.Min(g.player.moveSpeed+g.player.moveSpeedAccel, g.player.moveSpeedMax)
 
 		newX := g.player.x + math.Cos(g.player.angle)*ms
 		newY := g.player.y + math.Sin(g.player.angle)*ms
 
 		// Check if we're going to collide with a wall
-		if wall := g.player.checkWallCollision(newX, newY); wall > 0 {
+		if wall, _, _ := g.player.checkWallCollision(newX, newY); wall > 0 {
 			return nil
 		}
 
@@ -70,6 +76,8 @@ func (g *Game) Update() error {
 
 		g.player.x = newX
 		g.player.y = newY
+	} else {
+		g.player.moveSpeed = g.player.moveSpeedMin
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyO) {
@@ -118,7 +126,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			cy := g.player.y + (t * math.Sin(rayAngle))
 
 			// Detect collision with walls
-			wallIndex := g.getWallAt(cx, cy)
+			wallIndex, _, _ := g.getWallAt(cx, cy)
 			if wallIndex == 0 {
 				continue
 			}
@@ -193,11 +201,11 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 // ===========================================================
 // Collision detection with map cells
 // ===========================================================
-func (g *Game) getWallAt(x, y float64) int {
+func (g *Game) getWallAt(x, y float64) (int, int, int) {
 	// NOTE: Bounds checking is not done, the map must have an outer wall
 	mapCellX := int(x / cellSize)
 	mapCellY := int(y / cellSize)
-	return g.mapdata[mapCellX][mapCellY]
+	return g.mapdata[mapCellX][mapCellY], mapCellX, mapCellY
 }
 
 // ===========================================================

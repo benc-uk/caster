@@ -4,6 +4,8 @@ import (
 	"image"
 	"log"
 	"math"
+	"os"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -58,14 +60,14 @@ func initSprites() {
 	var err error
 
 	log.Printf("Loading sprites...")
-	for _, spriteID := range []string{"ghoul", "skeleton", "thing"} {
-		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/m_" + spriteID + ".png")
-		if err != nil {
-			log.Fatal(err)
-		}
+	spriteDir, err := os.ReadDir("./sprites")
+	if err != nil {
+		log.Fatal(err)
 	}
-	for _, spriteID := range []string{"potion", "ball"} {
-		spriteImages[spriteID], _, err = ebitenutil.NewImageFromFile("./sprites/i_" + spriteID + ".png")
+
+	for _, file := range spriteDir {
+		name := strings.TrimSuffix(file.Name(), ".png")
+		spriteImages[name], _, err = ebitenutil.NewImageFromFile("./sprites/" + file.Name())
 		if err != nil {
 			log.Fatal(err)
 		}

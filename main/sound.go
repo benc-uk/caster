@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
@@ -17,8 +18,13 @@ func initSound() {
 
 	audioCtx = audio.NewContext(44100)
 
-	for _, sound := range []string{"footstep", "woohoo", "door_open", "grunt"} {
-		f, err := os.Open("./sounds/" + sound + ".wav")
+	wavDir, err := os.ReadDir("./sounds")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range wavDir {
+		f, err := os.Open("./sounds/" + file.Name())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -30,7 +36,7 @@ func initSound() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sounds[sound] = p
+		sounds[strings.TrimSuffix(file.Name(), ".wav")] = p
 	}
 }
 

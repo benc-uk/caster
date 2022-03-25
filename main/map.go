@@ -55,24 +55,7 @@ func loadMap(filename string, g *Game) {
 					case 't':
 						g.addMonster("thing", x, y, 1.7, 2.0, 1.0)
 					}
-
 				}
-
-				// Items
-				// if c == 'P' || c == 'B' {
-				// 	s := Sprite{
-				// 		x: float64(x)*cellSize + cellSize/2,
-				// 		y: float64(y)*cellSize + cellSize/2,
-				// 	}
-				// 	switch c {
-				// 	case 'P':
-				// 		s.id = "potion"
-				// 	case 'B':
-				// 		s.id = "ball"
-				// 	}
-				// 	s.image = spriteImages[s.id]
-				// 	g.sprites = append(g.sprites, s)
-				// }
 			} else {
 				// Walls
 				g.mapdata[x][y] = i

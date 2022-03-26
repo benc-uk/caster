@@ -3,11 +3,8 @@ package main
 import (
 	"fmt"
 	"image"
-	"image/color"
 	"math"
-	"math/rand"
 	"sort"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -32,6 +29,10 @@ type Game struct {
 // Update loop handles inputs
 // ===========================================================
 func (g *Game) Update() error {
+	// Update rest of game state
+	g.updateMonsters()
+	g.updateProjectiles()
+
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		g.player.angle += g.player.turnSpeed
 	}
@@ -53,38 +54,8 @@ func (g *Game) Update() error {
 		g.player.attack()
 	}
 
-	g.updateMonsters()
-	g.updateProjectiles()
-
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
-		ms := g.player.moveSpeed
-		if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
-			ms = -g.player.moveSpeed
-		}
-		g.player.moveSpeed = math.Min(g.player.moveSpeed+g.player.moveSpeedAccel, g.player.moveSpeedMax)
-
-		newX := g.player.x + math.Cos(g.player.angle)*ms
-		newY := g.player.y + math.Sin(g.player.angle)*ms
-
-		// Check if we're going to collide with a wall
-		if wall, _, _ := g.player.checkWallCollision(newX, newY); wall > 0 {
-			// Hit a wall so jump out here
-			return nil
-		}
-
-		// Update player position
-		g.player.x = newX
-		g.player.y = newY
-
-		// Footstep sound
-		if !g.player.playingFootsteps {
-			playSound(fmt.Sprintf("footstep_%d", rand.Intn(4)), 0.5, true)
-			g.player.playingFootsteps = true
-
-			time.AfterFunc(300*time.Millisecond, func() {
-				g.player.playingFootsteps = false
-			})
-		}
+		g.player.move()
 	} else {
 		g.player.moveSpeed = g.player.moveSpeedMin
 	}
@@ -179,7 +150,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Sprite rendering loop(s)...
-	// Update monster distances
+	// Update sprite distances
 	for i := range g.sprites {
 		g.sprites[i].dist = math.Sqrt(math.Pow(g.player.x-g.sprites[i].x, 2) + math.Pow(g.player.y-g.sprites[i].y, 2))
 	}
@@ -217,42 +188,4 @@ func (g *Game) getWallAt(x, y float64) (int, int, int) {
 	mapCellX := int(x / cellSize)
 	mapCellY := int(y / cellSize)
 	return g.mapdata[mapCellX][mapCellY], mapCellX, mapCellY
-}
-
-// ===========================================================
-// Handle the map overlay
-// ===========================================================
-func (g *Game) overlay(screen *ebiten.Image) {
-	if !overlayShown {
-		return
-	}
-
-	overlayImage.Fill(color.RGBA{0x00, 0x00, 0x00, 0x00})
-	px := g.player.x / float64(cellSize/overlayCellSize)
-	py := g.player.y / float64(cellSize/overlayCellSize)
-
-	// Draw the player
-	ebitenutil.DrawRect(overlayImage, px-1, py-1, 3, 3, color.RGBA{255, 255, 255, 255})
-
-	// draw sprites
-	for _, sprite := range g.sprites {
-		sx := sprite.x / float64(cellSize/overlayCellSize)
-		sy := sprite.y / float64(cellSize/overlayCellSize)
-		c := color.RGBA{255, 0, 0, 255}
-		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
-	}
-
-	// Draw the map
-	for y := 0; y < g.mapHeight; y++ {
-		for x := 0; x < g.mapWidth; x++ {
-			if g.mapdata[x][y] != 0 {
-				ebitenutil.DrawRect(overlayImage, float64(x*overlayCellSize), float64(y*overlayCellSize), float64(overlayCellSize), float64(overlayCellSize), color.RGBA{255, 255, 255, 58})
-			}
-		}
-	}
-
-	w, h := overlayImage.Size()
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(float64(winWidth)/float64(w)*overlayZoom, float64(winHeight)/float64(h)*overlayZoom)
-	screen.DrawImage(overlayImage, op)
 }

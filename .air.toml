@@ -3,10 +3,10 @@ tmp_dir = "tmp"
  
 [build]
 include_ext = [ "go" ]
-include_dir = [ "main" ]
-cmd = "go build -o ./tmp/main ./main/..."
+include_dir = [ "src" ]
+cmd = "go build -o ./tmp/caster ./src/..."
 #full_bin = "./tmp/main medium 12"
-full_bin = "./tmp/main tiny"
+full_bin = "./tmp/caster tiny"
 
 [misc]
 clean_on_exit = true

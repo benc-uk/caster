@@ -1,4 +1,4 @@
-SRC_DIR := main
+SRC_DIR := src
 GO_PKG := github.com/benc-uk/caster
 WIN_DIR := /mnt/c/Temp
 

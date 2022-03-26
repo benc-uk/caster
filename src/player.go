@@ -1,7 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"math"
+	"math/rand"
+	"time"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Player struct {
@@ -44,6 +49,37 @@ func newPlayer() Player {
 		playingFootsteps: false,
 		health:           100,
 		mana:             100,
+	}
+}
+
+func (p *Player) move() {
+	ms := p.moveSpeed
+	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
+		ms = -p.moveSpeed
+	}
+	p.moveSpeed = math.Min(p.moveSpeed+p.moveSpeedAccel, p.moveSpeedMax)
+
+	newX := p.x + math.Cos(p.angle)*ms
+	newY := p.y + math.Sin(p.angle)*ms
+
+	// Check if we're going to collide with a wall
+	if wall, _, _ := p.checkWallCollision(newX, newY); wall > 0 {
+		// Hit a wall so don't move
+		return
+	}
+
+	// Update player position
+	p.x = newX
+	p.y = newY
+
+	// Footstep sound
+	if !p.playingFootsteps {
+		playSound(fmt.Sprintf("footstep_%d", rand.Intn(4)), 0.5, true)
+		p.playingFootsteps = true
+
+		time.AfterFunc(300*time.Millisecond, func() {
+			p.playingFootsteps = false
+		})
 	}
 }
 

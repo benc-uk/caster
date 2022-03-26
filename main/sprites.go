@@ -51,6 +51,13 @@ func (g *Game) addSprite(kind string, x, y float64, angle float64, speed float64
 	return s
 }
 
+func (s *Sprite) isHit(x, y float64) bool {
+	deltaX := x - s.x
+	deltaY := y - s.y
+	dist := math.Sqrt(deltaX*deltaX + deltaY*deltaY)
+	return dist < s.size
+}
+
 // TODO: this is pretty inefficient, but keeping the sprites in a map too is hard for sorting
 func (g *Game) removeSprite(sprite *Sprite) {
 	for i, s := range g.sprites {
@@ -87,9 +94,6 @@ func initSprites() {
 // Draws a sprite on the screen with correct depth
 // ===========================================================
 func (sprite *Sprite) draw(screen *ebiten.Image, g *Game) {
-	if g.fc%30 == 0 && sprite.kind == "zap" {
-		log.Printf("Drawing sprite: %+v", sprite)
-	}
 	if sprite.dist > viewDistance {
 		return
 	}

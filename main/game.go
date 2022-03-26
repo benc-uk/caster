@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"log"
 	"math"
 	"math/rand"
 	"sort"
@@ -25,6 +24,7 @@ type Game struct {
 	sprites     []*Sprite              // All sprites on the map, used for depth sorting
 	monsters    map[uint64]*Monster    // Monsters on the map
 	projectiles map[uint64]*Projectile // Projectiles currently in the game
+	items       map[uint64]*Item       // Items currently in the game
 	fc          int
 }
 
@@ -46,31 +46,15 @@ func (g *Game) Update() error {
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		log.Println("Space pressed")
 		g.player.use()
 	}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyControl) {
-		log.Println("Ctrl pressed")
+	if inpututil.IsKeyJustPressed(ebiten.KeyShift) {
 		g.player.attack()
 	}
 
-	//
-	for id := range g.projectiles {
-		s := g.projectiles[id].sprite
-		if s.speed <= 0 {
-			continue
-		}
-
-		xs := s.x + math.Cos(s.angle)*s.speed
-		ys := s.y + math.Sin(s.angle)*s.speed
-		if wi, _, _ := g.getWallAt(xs, ys); wi > 0 {
-			g.removeProjectile(g.projectiles[id])
-		}
-
-		s.x = xs
-		s.y = ys
-	}
+	g.updateMonsters()
+	g.updateProjectiles()
 
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		ms := g.player.moveSpeed
@@ -84,9 +68,15 @@ func (g *Game) Update() error {
 
 		// Check if we're going to collide with a wall
 		if wall, _, _ := g.player.checkWallCollision(newX, newY); wall > 0 {
+			// Hit a wall so jump out here
 			return nil
 		}
 
+		// Update player position
+		g.player.x = newX
+		g.player.y = newY
+
+		// Footstep sound
 		if !g.player.playingFootsteps {
 			playSound(fmt.Sprintf("footstep_%d", rand.Intn(4)), 0.5, true)
 			g.player.playingFootsteps = true
@@ -95,9 +85,6 @@ func (g *Game) Update() error {
 				g.player.playingFootsteps = false
 			})
 		}
-
-		g.player.x = newX
-		g.player.y = newY
 	} else {
 		g.player.moveSpeed = g.player.moveSpeedMin
 	}
@@ -209,8 +196,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	g.overlay(screen)
 
-	msg := fmt.Sprintf("FPS: %0.2f\n%dx%d\n\nPlayer: %f,%f", ebiten.CurrentFPS(), winWidth, winHeight, g.player.x, g.player.y)
+	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f", ebiten.CurrentFPS(), g.player.x, g.player.y)
 	ebitenutil.DebugPrint(screen, msg)
+
+	renderHud(screen, g)
 }
 
 // ===========================================================
@@ -218,7 +207,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 // ===========================================================
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return winWidth, winHeight
-	//return 1024, 768
 }
 
 // ===========================================================

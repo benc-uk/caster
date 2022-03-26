@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	_ "image/png"
 	"log"
 	"math"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 // 800×600, 1024×768, 1280×960, 1440×1080, 1600×1200
@@ -20,7 +23,7 @@ const textureSize = 32 // Wall texture size (square)
 // Used by raycasting when rendering the view
 const fov = math.Pi / 3.0
 const viewDistance = cellSize * 12 // How far player can see
-const viewRaysRatio = 2            // Ratio of rays cast to screen width, higher number = less rays = faster
+var viewRaysRatio = 4.0            // Ratio of rays cast to screen width, higher number = less rays = faster
 const rayStepT = 0.3               // Ray casting step size, larger = less iterations = faster = inaccuracies/gaps
 const epi = 0.01
 
@@ -33,6 +36,7 @@ var floorScaleH = 0.0 // Used for drawing ceiling and floors
 var viewRays = 0      // Number of rays to cast (see viewRaysRatio)
 var magicWall = 0.0   // Used to scale height of walls
 var magicSprite = 0.0 // Used to scale position of sprites
+var hudMargin = 0
 
 // Used for the map overlay view
 var overlayCellSize = cellSize / 4
@@ -45,19 +49,23 @@ var wallImages []*ebiten.Image
 var floorImage *ebiten.Image
 var ceilImage *ebiten.Image
 
+var game *Game
+var gameFont font.Face
+
 // ===========================================================
 // Load textures & sprites etc
 // ===========================================================
 func init() {
 	var err error
-	wallImages = make([]*ebiten.Image, 10)
+	wallImages = make([]*ebiten.Image, 25)
 	spriteImages = make(map[string]*ebiten.Image, 10)
 
 	log.Printf("Loading wall textures...")
-	for i := 1; i < 10; i++ {
-		wallImages[i], _, err = ebitenutil.NewImageFromFile("./textures/" + strconv.Itoa(i) + ".png")
-		if err != nil {
-			log.Fatal(err)
+	for i := 1; i < 25; i++ {
+		img, _, err := ebitenutil.NewImageFromFile("./textures/" + strconv.Itoa(i) + ".png")
+		if err == nil {
+
+			wallImages[i] = img
 		}
 	}
 
@@ -68,19 +76,46 @@ func init() {
 	ceilImage, _, _ = ebitenutil.NewImageFromFile("./textures/ceil.png")
 
 	initSound()
+
+	// Font(s
+	fontData, err := os.ReadFile("./fonts/morris-roman.ttf")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tt, err := opentype.Parse(fontData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	gameFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    100,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 // ===========================================================
 // Entry point
 // ===========================================================
 func main() {
-	res := "medium"
 
-	if len(os.Args) > 1 {
-		res = os.Args[1]
+	var flagRes string
+	var flagRatio int
+	var flagFull bool
+	var flagVsync bool
+	flag.StringVar(&flagRes, "res", "medium", "Screen resolution: tiny, small, medium, large, larger or super")
+	flag.IntVar(&flagRatio, "ratio", 4, "Ray rendering ratio as a percentage of screen width")
+	flag.BoolVar(&flagFull, "fullscreen", false, "Fullscreen mode (default false)")
+	flag.BoolVar(&flagVsync, "vsync", false, "Enable vsync (default false)")
+	flag.Parse()
+
+	if flagRatio > 0 {
+		viewRaysRatio = float64(flagRatio)
 	}
 
-	switch res {
+	switch flagRes {
 	case "tiny":
 		winWidth = 640
 		winHeight = 480
@@ -119,30 +154,42 @@ func main() {
 	winHeightHalf = winHeight / 2
 	floorScaleW = float64(winWidth) / 10.0
 	floorScaleH = float64(winHeightHalf) / 600.0
-	viewRays = winWidth / viewRaysRatio
+	viewRays = winWidth / int(viewRaysRatio)
 	depthBuffer = make([]float64, viewRays)
+	hudMargin = winHeight / 35
 
 	ebiten.SetWindowSize(winWidth, winHeight)
 	ebiten.SetWindowTitle("Crypt Caster")
 	ebiten.SetWindowResizable(true)
+	if flagVsync {
+		ebiten.SetFPSMode(ebiten.FPSModeVsyncOn)
+	} else {
+		ebiten.SetFPSMode(ebiten.FPSModeVsyncOffMaximum)
+	}
+	ebiten.SetFullscreen(flagFull)
 
+	log.Printf("Resolution: %dx%d, Ray ratio: %f", winWidth, winHeight, viewRaysRatio)
 	log.Printf("Starting game!")
-	g := &Game{
+	game = &Game{
 		sprites:     make([]*Sprite, 0),
 		monsters:    make(map[uint64]*Monster, 0),
 		projectiles: make(map[uint64]*Projectile, 0),
+		items:       make(map[uint64]*Item, 0),
 	}
 
-	g.player = newPlayer(g)
-	log.Printf("Player created %+v", g.player)
+	game.player = newPlayer()
+	log.Printf("Player created %+v", game.player)
 
-	g.level = 1
-	loadMap("./maps/"+strconv.Itoa(g.level)+".txt", g)
-	g.mapWidth = len(g.mapdata)
-	g.mapHeight = len(g.mapdata[0])
-	log.Printf("Map level %d loaded", g.level)
+	game.level = 1
+	game.loadMap("./maps/" + strconv.Itoa(game.level) + ".txt")
+	game.mapWidth = len(game.mapdata)
+	game.mapHeight = len(game.mapdata[0])
+	log.Printf("Map level %d loaded", game.level)
 
-	if err := ebiten.RunGame(g); err != nil {
+	// HUD image cache
+	hudImage = ebiten.NewImage(winWidth, winHeight)
+
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }

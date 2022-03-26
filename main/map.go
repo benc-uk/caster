@@ -8,10 +8,13 @@ import (
 	"strconv"
 )
 
+const doorWallIndex = 20
+const doorRuneWallIndex = 21
+
 // ===========================================================
 // Map parser and loader
 // ===========================================================
-func loadMap(filename string, g *Game) {
+func (g *Game) loadMap(filename string) {
 	g.mapdata = make([][]int, mapSize)
 	for i := range g.mapdata {
 		g.mapdata[i] = make([]int, mapSize)
@@ -43,33 +46,36 @@ func loadMap(filename string, g *Game) {
 					g.player.y = float64(y)*cellSize + cellSize/2
 				}
 
-				if monsterRe.MatchString(string(char)) {
-					log.Printf("Found monster %s at %d,%d", string(char), x, y)
-					x := float64(x)*cellSize + cellSize/2
-					y := float64(y)*cellSize + cellSize/2
+				if char == '#' {
+					g.mapdata[x][y] = doorWallIndex
+				}
 
+				if char == '%' {
+					g.mapdata[x][y] = doorRuneWallIndex
+				}
+
+				if monsterRe.MatchString(string(char)) {
 					switch char {
 					case 'g':
-						g.addMonster("ghoul", x, y, 2.35, 0, 1.0)
+						g.addMonster("ghoul", x, y)
 					case 's':
-						g.addMonster("skeleton", x, y, 1.0, 0, 1.0)
+						g.addMonster("skeleton", x, y)
 					case 't':
-						g.addMonster("thing", x, y, 1.7, 0, 1.0)
+						g.addMonster("thing", x, y)
 					case 'P':
-						g.addMonster("potion", x, y, 1.7, 0, 1.0)
+						g.addMonster("potion", x, y)
 					}
 				}
 
 				if itemRe.MatchString(string(char)) {
-					log.Printf("Found item %s at %d,%d", string(char), x, y)
 					x := float64(x)*cellSize + cellSize/2
 					y := float64(y)*cellSize + cellSize/2
 
 					switch char {
 					case 'P':
-						g.addMonster("potion", x, y, 1.7, 0, 1.0)
+						g.addItem("potion", x, y, 1.7, 0, 1.0)
 					case 'B':
-						g.addMonster("ball", x, y, 1.7, 0, 1.0)
+						g.addItem("ball", x, y, 1.7, 0, 1.0)
 					}
 				}
 			} else {

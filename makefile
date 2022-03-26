@@ -1,5 +1,6 @@
 SRC_DIR := main
 GO_PKG := github.com/benc-uk/caster
+WIN_DIR := /mnt/c/Temp
 
 # Things you don't want to change
 REPO_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
@@ -40,8 +41,9 @@ run: ## 🏃 Run application
 windows: ## 💻 Bundle Windows version
 	@figlet $@
 	make build
-	cp bin/caster.exe /mnt/c/Temp/caster.exe
-	cp -r ./textures /mnt/c/Temp/
-	cp -r ./sprites /mnt/c/Temp/
-	cp -r ./maps /mnt/c/Temp/
-	cp -r ./sounds /mnt/c/Temp/
+	cp bin/caster.exe $(WIN_DIR)/caster.exe
+	cp -r ./textures $(WIN_DIR)/
+	cp -r ./sprites $(WIN_DIR)/
+	cp -r ./maps $(WIN_DIR)/
+	cp -r ./sounds $(WIN_DIR)/
+	cp -r ./fonts $(WIN_DIR)/

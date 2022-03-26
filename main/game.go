@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log"
 	"math"
+	"math/rand"
 	"sort"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -14,14 +17,15 @@ import (
 
 // Holds most core game data
 type Game struct {
-	mapdata   [][]int   // Map data is stored in a 2D array, 0 = empty, 1+ = wall
-	mapWidth  int       // Held as convenience
-	mapHeight int       // Held as convenience
-	player    Player    // Player object
-	level     int       // Which level we're on
-	sprites   []Sprite  // Any sprites on the map
-	monsters  []Monster // Monsters on the map
-	fc        int
+	mapdata     [][]int                // Map data is stored in a 2D array, 0 = empty, 1+ = wall
+	mapWidth    int                    // Held as convenience
+	mapHeight   int                    // Held as convenience
+	player      Player                 // Player object
+	level       int                    // Which level we're on
+	sprites     []*Sprite              // All sprites on the map, used for depth sorting
+	monsters    map[uint64]*Monster    // Monsters on the map
+	projectiles map[uint64]*Projectile // Projectiles currently in the game
+	fc          int
 }
 
 // ===========================================================
@@ -41,21 +45,32 @@ func (g *Game) Update() error {
 		g.player.turnSpeed = g.player.turnSpeedMin
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		log.Println("Space pressed")
 		g.player.use()
 	}
 
-	// TODO: Placeholder, replace with actual movement
-	// for i := range g.sprites {
-	// 	xs := g.sprites[i].x + math.Cos(g.sprites[i].angle)*g.sprites[i].speed
-	// 	ys := g.sprites[i].y + math.Sin(g.sprites[i].angle)*g.sprites[i].speed
-	// 	if g.getWallAt(xs, ys) > 0 {
-	// 		g.sprites[i].angle += math.Pi / 2
-	// 		playSound("woohoo")
-	// 	}
-	// 	g.sprites[i].x = xs
-	// 	g.sprites[i].y = ys
-	// }
+	if inpututil.IsKeyJustPressed(ebiten.KeyControl) {
+		log.Println("Ctrl pressed")
+		g.player.attack()
+	}
+
+	//
+	for id := range g.projectiles {
+		s := g.projectiles[id].sprite
+		if s.speed <= 0 {
+			continue
+		}
+
+		xs := s.x + math.Cos(s.angle)*s.speed
+		ys := s.y + math.Sin(s.angle)*s.speed
+		if wi, _, _ := g.getWallAt(xs, ys); wi > 0 {
+			g.removeProjectile(g.projectiles[id])
+		}
+
+		s.x = xs
+		s.y = ys
+	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		ms := g.player.moveSpeed
@@ -72,7 +87,14 @@ func (g *Game) Update() error {
 			return nil
 		}
 
-		playSound("footstep")
+		if !g.player.playingFootsteps {
+			playSound(fmt.Sprintf("footstep_%d", rand.Intn(4)), 0.5, true)
+			g.player.playingFootsteps = true
+
+			time.AfterFunc(300*time.Millisecond, func() {
+				g.player.playingFootsteps = false
+			})
+		}
 
 		g.player.x = newX
 		g.player.y = newY
@@ -178,9 +200,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	sort.Slice(g.sprites, func(i, j int) bool {
 		return g.sprites[i].dist > g.sprites[j].dist
 	})
+
 	// Now render sprites
 	for _, sprite := range g.sprites {
-		drawSprite(screen, g, sprite)
+		sprite.draw(screen, g)
 	}
 
 	// Overlay map
@@ -228,9 +251,6 @@ func (g *Game) overlay(screen *ebiten.Image) {
 		sx := sprite.x / float64(cellSize/overlayCellSize)
 		sy := sprite.y / float64(cellSize/overlayCellSize)
 		c := color.RGBA{255, 0, 0, 255}
-		if sprite.id == "potion" {
-			c = color.RGBA{0, 255, 0, 255}
-		}
 		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
 	}
 

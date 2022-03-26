@@ -16,12 +16,14 @@ const spriteImgSizeH = 16
 
 // Used for rendering sprites with occlusion
 var depthBuffer []float64
+
+// Global list of ALL sprites, used for depth sorting
 var spriteImages map[string]*ebiten.Image
 
 type Sprite struct {
 	x     float64
 	y     float64
-	id    string
+	kind  string
 	dist  float64 // distance to player, updated during the render cycle
 	angle float64
 	speed float64
@@ -29,28 +31,34 @@ type Sprite struct {
 	image *ebiten.Image
 }
 
-func (g *Game) addSprite(id string, x, y float64, angle float64, speed float64, size float64) *Sprite {
-	if g.sprites == nil {
-		g.sprites = make([]Sprite, 0)
-	}
-
-	if spriteImages[id] == nil {
-		log.Printf("ERROR! Sprite image not found: %s", id)
+func (g *Game) addSprite(kind string, x, y float64, angle float64, speed float64, size float64) *Sprite {
+	if spriteImages[kind] == nil {
+		log.Printf("ERROR! Sprite image not found: %s", kind)
 		return nil
 	}
 
-	s := Sprite{
+	s := &Sprite{
 		x:     x,
 		y:     y,
-		id:    id,
+		kind:  kind,
 		angle: angle,
 		speed: speed,
 		size:  size,
-		image: spriteImages[id],
+		image: spriteImages[kind],
 	}
 
 	g.sprites = append(g.sprites, s)
-	return &s
+	return s
+}
+
+// TODO: this is pretty inefficient, but keeping the sprites in a map too is hard for sorting
+func (g *Game) removeSprite(sprite *Sprite) {
+	for i, s := range g.sprites {
+		if s == sprite {
+			g.sprites = append(g.sprites[:i], g.sprites[i+1:]...)
+			break
+		}
+	}
 }
 
 // ===========================================================
@@ -78,7 +86,10 @@ func initSprites() {
 // ===========================================================
 // Draws a sprite on the screen with correct depth
 // ===========================================================
-func drawSprite(screen *ebiten.Image, g *Game, sprite Sprite) {
+func (sprite *Sprite) draw(screen *ebiten.Image, g *Game) {
+	if g.fc%30 == 0 && sprite.kind == "zap" {
+		log.Printf("Drawing sprite: %+v", sprite)
+	}
 	if sprite.dist > viewDistance {
 		return
 	}

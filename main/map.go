@@ -25,6 +25,7 @@ func loadMap(filename string, g *Game) {
 	defer file.Close()
 
 	monsterRe := regexp.MustCompile("[a-z]")
+	itemRe := regexp.MustCompile("[A-Z]")
 
 	y := 0
 	scanner := bufio.NewScanner(file)
@@ -49,11 +50,26 @@ func loadMap(filename string, g *Game) {
 
 					switch char {
 					case 'g':
-						g.addMonster("ghoul", x, y, 2.35, 2.0, 1.0)
+						g.addMonster("ghoul", x, y, 2.35, 0, 1.0)
 					case 's':
-						g.addMonster("skeleton", x, y, 1.0, 4.0, 1.0)
+						g.addMonster("skeleton", x, y, 1.0, 0, 1.0)
 					case 't':
-						g.addMonster("thing", x, y, 1.7, 2.0, 1.0)
+						g.addMonster("thing", x, y, 1.7, 0, 1.0)
+					case 'P':
+						g.addMonster("potion", x, y, 1.7, 0, 1.0)
+					}
+				}
+
+				if itemRe.MatchString(string(char)) {
+					log.Printf("Found item %s at %d,%d", string(char), x, y)
+					x := float64(x)*cellSize + cellSize/2
+					y := float64(y)*cellSize + cellSize/2
+
+					switch char {
+					case 'P':
+						g.addMonster("potion", x, y, 1.7, 0, 1.0)
+					case 'B':
+						g.addMonster("ball", x, y, 1.7, 0, 1.0)
 					}
 				}
 			} else {

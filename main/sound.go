@@ -40,12 +40,13 @@ func initSound() {
 	}
 }
 
-func playSound(sound string) {
+func playSound(sound string, volume float64, wait bool) {
 	if sounds[sound] != nil {
-		if sounds[sound].IsPlaying() {
+		if sounds[sound].IsPlaying() && wait {
 			return
 		}
 		_ = sounds[sound].Rewind()
+		sounds[sound].SetVolume(volume)
 		sounds[sound].Play()
 	}
 }

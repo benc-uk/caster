@@ -40,7 +40,7 @@ var overlayImage = ebiten.NewImage(mapSize*overlayCellSize, mapSize*overlayCellS
 var overlayZoom = 5.0
 var overlayShown = false
 
-// Global texture and sprite caches
+// Global texture and sprite caches for walls and floors
 var wallImages []*ebiten.Image
 var floorImage *ebiten.Image
 var ceilImage *ebiten.Image
@@ -128,8 +128,9 @@ func main() {
 
 	log.Printf("Starting game!")
 	g := &Game{
-		sprites:  make([]Sprite, 0),
-		monsters: make([]Monster, 0),
+		sprites:     make([]*Sprite, 0),
+		monsters:    make(map[uint64]*Monster, 0),
+		projectiles: make(map[uint64]*Projectile, 0),
 	}
 
 	g.player = newPlayer(g)

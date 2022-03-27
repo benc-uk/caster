@@ -49,8 +49,8 @@ func newPlayer(cellX, cellY int) Player {
 		fov:              fov,
 		size:             cellSize / 16.0,
 		playingFootsteps: false,
-		health:           10000,
-		mana:             10000,
+		health:           100,
+		mana:             100,
 		cellX:            cellX,
 		cellY:            cellY,
 	}
@@ -85,7 +85,6 @@ func (p *Player) move() {
 		}
 
 		item.pickUpFunc(p)
-		playSound("zap", 0.3, false)
 		game.removeItem(item)
 	}
 
@@ -156,9 +155,9 @@ func (p *Player) attack() {
 	}
 	playSound("zap", 0.3, false)
 
-	p.mana -= 10
+	p.mana -= 5
 	if p.mana < 0 {
 		p.mana = 0.0
 	}
-	game.addProjectile("magic_1", p.x, p.y, p.angle, 3, 40) //p.moveSpeedMax*1.1, 40)
+	game.addProjectile("magic_1", p.x, p.y, p.angle, p.moveSpeedMax*1.1, 40)
 }

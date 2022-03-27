@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -23,20 +24,31 @@ func initSound() {
 		log.Fatal(err)
 	}
 
-	for _, file := range wavDir {
-		f, err := os.Open("./sounds/" + file.Name())
+	for _, fileEntry := range wavDir {
+		file, err := os.Open("./sounds/" + fileEntry.Name())
 		if err != nil {
 			log.Fatal(err)
 		}
-		d, err := wav.DecodeWithSampleRate(44100, f)
+
+		var audioStream io.Reader
+		if strings.HasPrefix(fileEntry.Name(), "loop") {
+			wavStream, err := wav.DecodeWithSampleRate(44100, file)
+			if err != nil {
+				log.Fatal(err)
+			}
+			audioStream = audio.NewInfiniteLoop(file, wavStream.Length())
+		} else {
+			audioStream, err = wav.DecodeWithSampleRate(44100, file)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		player, err := audioCtx.NewPlayer(audioStream)
 		if err != nil {
 			log.Fatal(err)
 		}
-		p, err := audioCtx.NewPlayer(d)
-		if err != nil {
-			log.Fatal(err)
-		}
-		sounds[strings.TrimSuffix(file.Name(), ".wav")] = p
+		sounds[strings.TrimSuffix(fileEntry.Name(), ".wav")] = player
 	}
 }
 
@@ -49,4 +61,23 @@ func playSound(sound string, volume float64, wait bool) {
 		sounds[sound].SetVolume(volume)
 		sounds[sound].Play()
 	}
+}
+
+func soundStartAmbience() {
+	sounds["loop_ambient_1"].Play()
+}
+
+func soundStopAmbience() {
+	sounds["loop_ambient_1"].Pause()
+	_ = sounds["loop_menu"].Rewind()
+}
+
+func soundStopTitleScreen() {
+	sounds["loop_menu"].Pause()
+	_ = sounds["loop_menu"].Rewind()
+}
+
+func soundStartTitleScreen() {
+	sounds["loop_menu"].SetVolume(0.5)
+	sounds["loop_menu"].Play()
 }

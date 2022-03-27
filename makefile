@@ -1,6 +1,7 @@
 SRC_DIR := src
 GO_PKG := github.com/benc-uk/caster
-WIN_DIR := /mnt/c/Temp
+WIN_DIR := /mnt/c/Temp/caster
+LINUX_DIR := /tmp/caster
 
 # Things you don't want to change
 REPO_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
@@ -45,11 +46,27 @@ run: ## 🏃 Run application
 	@figlet $@ || true
 	air -c .air.toml
 
-windows: build-win ## 💻 Bundle Windows version
+release-windows: build-win ## 💻 Bundle Windows version
 	@figlet $@
+	rm -rf $(WIN_DIR)/
+	mkdir -p $(WIN_DIR)
 	cp bin/caster.exe $(WIN_DIR)/caster.exe
 	cp -r ./textures $(WIN_DIR)/
 	cp -r ./sprites $(WIN_DIR)/
 	cp -r ./maps $(WIN_DIR)/
 	cp -r ./sounds $(WIN_DIR)/
 	cp -r ./fonts $(WIN_DIR)/
+	cd $(WIN_DIR); zip ./crypt-caster-win.zip ./*
+
+release-linux: build-linux ## 💻 Bundle Linux version
+	@figlet $@
+	rm -rf $(LINUX_DIR)/
+	mkdir -p $(LINUX_DIR)
+	cp bin/caster $(LINUX_DIR)/caster
+	cp -r ./textures $(LINUX_DIR)/
+	cp -r ./sprites $(LINUX_DIR)/
+	cp -r ./maps $(LINUX_DIR)/
+	cp -r ./sounds $(LINUX_DIR)/
+	cp -r ./fonts $(LINUX_DIR)/
+	cd $(LINUX_DIR); zip ./crypt-caster-linux.zip ./*
+	cp $(LINUX_DIR)/crypt-caster-linux.zip $(WIN_DIR)/crypt-caster-linux.zip

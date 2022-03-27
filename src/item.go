@@ -28,7 +28,16 @@ func (g *Game) addItem(kind string, cellX, cellY int, angle float64, speed float
 
 	if kind == "potion" {
 		item.pickUpFunc = func(p *Player) {
-			p.mana += 10
+			p.mana += 30
+			playSound("zip_up", 1, false)
+		}
+	}
+
+	if kind == "ball" {
+		item.pickUpFunc = func(p *Player) {
+			p.mana += 30
+			playSound("woohoo", 1, false)
+			g.returnToTitleScreen()
 		}
 	}
 

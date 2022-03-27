@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 const doorWallIndex = 20
@@ -14,30 +15,56 @@ const doorRuneWallIndex = 21
 // ===========================================================
 // Map parser and loader
 // ===========================================================
-func (g *Game) loadMap(filename string) {
+func (g *Game) loadMap(name string) {
 	g.mapdata = make([][]int, mapSize)
 	for i := range g.mapdata {
 		g.mapdata[i] = make([]int, mapSize)
 	}
 
-	log.Printf("Loading map from %s", filename)
+	filename := "./maps/" + name + ".map"
+	log.Printf("Loading map from: %s", filename)
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
+	g.mapName = name
 
+	// How we find monsters and items
 	monsterRe := regexp.MustCompile("[a-z]")
 	itemRe := regexp.MustCompile("[A-Z]")
 
+	// Read the file line by line
 	y := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 
+		// Special commands: CEIL & FLOOR to set the coloring of the ceiling and floor
+		if strings.HasPrefix(line, "CEIL:") || strings.HasPrefix(line, "FLOOR:") {
+			re := regexp.MustCompile(`:\s*(.*?),\s*(.*?),\s*(.*?)$`)
+			matches := re.FindAllStringSubmatch(line, -1)
+			p1, _ := strconv.ParseFloat(matches[0][1], 64)
+			p2, _ := strconv.ParseFloat(matches[0][2], 64)
+			p3, _ := strconv.ParseFloat(matches[0][3], 64)
+
+			if line[0] == 'C' {
+				ceilOp.ColorM.Scale(p1, p2, p3, 1)
+			} else {
+				floorOp.ColorM.Scale(p1, p2, p3, 1)
+			}
+		}
+
+		if strings.HasPrefix(line, "NAME:") {
+			g.mapName = line[5:]
+		}
+
+		// Process the line and store it in the map
 		for x, char := range line {
-			i, err := strconv.Atoi(string(char))
-			if err != nil {
+			if isNumeric(string(char)) {
+				// Walls are numbered from 1 to 9
+				g.mapdata[x][y] = int(char - '0')
+			} else {
 				g.mapdata[x][y] = 0
 
 				// Player
@@ -45,6 +72,7 @@ func (g *Game) loadMap(filename string) {
 					g.player.moveToCell(x, y)
 				}
 
+				// Doors are a special case, and start at 20
 				if char == '#' {
 					g.mapdata[x][y] = doorWallIndex
 				}
@@ -74,9 +102,6 @@ func (g *Game) loadMap(filename string) {
 						g.addItem("ball", x, y, 1.7, 0, 1.0)
 					}
 				}
-			} else {
-				// Walls
-				g.mapdata[x][y] = i
 			}
 		}
 		y++
@@ -85,5 +110,9 @@ func (g *Game) loadMap(filename string) {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+}
 
+func isNumeric(s string) bool {
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
 }

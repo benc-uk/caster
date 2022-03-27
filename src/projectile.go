@@ -26,12 +26,11 @@ func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed flo
 }
 
 func (g *Game) updateProjectiles() {
-
 	for id := range g.projectiles {
 		sprite := g.projectiles[id].sprite
 
-		// Animate and rotate the projectile sprite
-		if g.fc%5 == 0 {
+		// Animate and rotate the projectile sprite every 5 frames
+		if g.ticks%5 == 0 {
 			rotatedImg := ebiten.NewImageFromImage(sprite.image)
 			rotateOp := &ebiten.DrawImageOptions{}
 			rotateOp.GeoM.Translate(-spriteImgSizeH, -spriteImgSizeH)
@@ -40,10 +39,6 @@ func (g *Game) updateProjectiles() {
 			rotatedImg.Clear()
 			rotatedImg.DrawImage(sprite.image, rotateOp)
 			sprite.image = rotatedImg
-		}
-
-		if sprite.speed <= 0 {
-			continue
 		}
 
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
@@ -55,19 +50,19 @@ func (g *Game) updateProjectiles() {
 		// Check if it hit a monster
 		for _, m := range g.monsters {
 			if m.sprite.isHit(newX, newY) {
-				if m == nil {
+				if m == nil || g.projectiles[id] == nil {
 					continue
 				}
+
 				m.health -= g.projectiles[id].damage
 				if m.health <= 0 {
 					playSound("monster_death", 1.0, false)
-					g.removeMonster(m)
+					m.kill()
 				} else {
 					playSound("monster_hit", 1.0, false)
 				}
 
 				g.removeProjectile(g.projectiles[id])
-
 			}
 		}
 

@@ -5,14 +5,21 @@ import (
 	_ "image/png"
 	"log"
 	"math"
-	"os"
+	"math/rand"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 )
+
+var game *Game
+var Version = "0.0.1"
+var titleScreen = false
+var titleLevelIndex = 0
+var titleLevels = []string{}
 
 // 800×600, 1024×768, 1280×960, 1440×1080, 1600×1200
 // Global game constants
@@ -31,8 +38,6 @@ const epi = 0.01
 var winWidth = 0      // Game window width
 var winHeight = 0     // Game window height
 var winHeightHalf = 0 // Store half the height as we use it a lot
-var floorScaleW = 0.0 // Used for drawing ceiling and floors
-var floorScaleH = 0.0 // Used for drawing ceiling and floors
 var viewRays = 0      // Number of rays to cast (see viewRaysRatio)
 var magicWall = 0.0   // Used to scale height of walls
 var magicSprite = 0.0 // Used to scale position of sprites
@@ -46,19 +51,28 @@ var overlayShown = false
 
 // Global texture and sprite caches for walls and floors
 var wallImages []*ebiten.Image
+
+// Global/precomputed vars for drawing floor and ceiling
 var floorImage *ebiten.Image
 var ceilImage *ebiten.Image
-
-var game *Game
-var gameFont font.Face
+var floorOp *ebiten.DrawImageOptions
+var ceilOp *ebiten.DrawImageOptions
 
 // ===========================================================
 // Load textures & sprites etc
 // ===========================================================
 func init() {
-	var err error
 	wallImages = make([]*ebiten.Image, 25)
 	spriteImages = make(map[string]*ebiten.Image, 10)
+
+	// Find all maps in the maps folder
+	maps, err := filepath.Glob("maps/*.map")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, mapFile := range maps {
+		titleLevels = append(titleLevels, strings.TrimSuffix(filepath.Base(mapFile), ".map"))
+	}
 
 	log.Printf("Loading wall textures...")
 	for i := 1; i < 25; i++ {
@@ -76,30 +90,13 @@ func init() {
 	ceilImage, _, _ = ebitenutil.NewImageFromFile("./textures/ceil.png")
 
 	initSound()
-
-	// Font(s
-	fontData, err := os.ReadFile("./fonts/morris-roman.ttf")
-	if err != nil {
-		log.Fatal(err)
-	}
-	tt, err := opentype.Parse(fontData)
-	if err != nil {
-		log.Fatal(err)
-	}
-	gameFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    100,
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 // ===========================================================
 // Entry point
 // ===========================================================
 func main() {
+	rand.Seed(time.Now().UnixNano())
 
 	var flagRes string
 	var flagRatio int
@@ -152,11 +149,12 @@ func main() {
 
 	// Set all those magic numbers
 	winHeightHalf = winHeight / 2
-	floorScaleW = float64(winWidth) / 10.0
-	floorScaleH = float64(winHeightHalf) / 600.0
 	viewRays = winWidth / int(viewRaysRatio)
 	depthBuffer = make([]float64, viewRays)
 	hudMargin = winHeight / 35
+
+	// Call this after the magic numbers are set
+	initHUD()
 
 	ebiten.SetWindowSize(winWidth, winHeight)
 	ebiten.SetWindowTitle("Crypt Caster")
@@ -168,28 +166,46 @@ func main() {
 	}
 	ebiten.SetFullscreen(flagFull)
 
+	titleScreen = true
+	soundStartTitleScreen()
+	log.Printf("Starting game...")
 	log.Printf("Resolution: %dx%d, Ray ratio: %f", winWidth, winHeight, viewRaysRatio)
-	log.Printf("Starting game!")
+
 	game = &Game{
-		sprites:     make([]*Sprite, 0),
-		monsters:    make(map[uint64]*Monster, 0),
-		projectiles: make(map[uint64]*Projectile, 0),
-		items:       make(map[uint64]*Item, 0),
+		paused: false,
 	}
-
-	game.player = newPlayer(1, 1)
-	log.Printf("Player created %+v", game.player)
-
-	game.level = 1
-	game.loadMap("./maps/" + strconv.Itoa(game.level) + ".txt")
-	game.mapWidth = len(game.mapdata)
-	game.mapHeight = len(game.mapdata[0])
-	log.Printf("Map level %d loaded", game.level)
-
-	// HUD image cache
-	hudImage = ebiten.NewImage(winWidth, winHeight)
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func startGame() {
+	playSound("menu_start", 2, false)
+	titleScreen = false
+	soundStopTitleScreen()
+	soundStartAmbience()
+
+	log.Printf("Starting level...")
+	game.sprites = make([]*Sprite, 0)
+	game.monsters = make(map[uint64]*Monster, 0)
+	game.projectiles = make(map[uint64]*Projectile, 0)
+	game.items = make(map[uint64]*Item, 0)
+	game.paused = false
+
+	game.player = newPlayer(1, 1)
+	log.Printf("Player created %+v", game.player)
+
+	// Precompute operations for drawing floor and ceiling
+	floorOp = &ebiten.DrawImageOptions{}
+	floorOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
+	floorOp.GeoM.Translate(0.0, float64(winHeightHalf))
+	ceilOp = &ebiten.DrawImageOptions{}
+	ceilOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
+
+	game.loadMap(titleLevels[titleLevelIndex])
+	log.Printf("Map level '%s' loaded", game.mapName)
+
+	// HUD image cache
+	hudImage = ebiten.NewImage(winWidth, winHeight)
 }

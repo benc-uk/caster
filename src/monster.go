@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"math/rand"
+	"time"
 )
 
 type Monster struct {
@@ -23,11 +24,19 @@ func (g *Game) addMonster(kind string, x, y int) {
 	s := g.addSprite(kind, cx, cy, angle, speed, monsterSize)
 
 	id := rand.Uint64()
-	g.monsters[id] = &Monster{
+	mon := &Monster{
 		id:     id,
 		sprite: s,
 		health: 100,
 	}
+	if kind == "skeleton" {
+		mon.health = 35
+	}
+	if kind == "ghoul" {
+		mon.health = 75
+	}
+
+	g.monsters[id] = mon
 }
 
 func (m *Monster) checkWallCollision(x, y float64) (int, int, int) {
@@ -48,8 +57,20 @@ func (m *Monster) checkWallCollision(x, y float64) (int, int, int) {
 }
 
 func (g *Game) updateMonsters() {
-	for id := range g.monsters {
-		sprite := g.monsters[id].sprite
+	for _, mon := range g.monsters {
+		sprite := mon.sprite
+
+		// Animations!
+		if g.ticks%20 == 0 {
+			if spriteImages[sprite.kind+"-1"] != nil {
+				if mon.sprite.image == spriteImages[sprite.kind+"-1"] {
+					mon.sprite.image = spriteImages[sprite.kind]
+				} else {
+					mon.sprite.image = spriteImages[sprite.kind+"-1"]
+				}
+			}
+		}
+
 		if sprite.speed <= 0 {
 			continue
 		}
@@ -57,7 +78,7 @@ func (g *Game) updateMonsters() {
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
 		newY := sprite.y + math.Sin(sprite.angle)*sprite.speed
 		if wi, _, _ := g.getWallAt(newX, newY); wi > 0 {
-			g.monsters[id].sprite.angle = g.monsters[id].sprite.angle + math.Pi
+			mon.sprite.angle = mon.sprite.angle + math.Pi
 		}
 
 		sprite.x = newX
@@ -70,4 +91,12 @@ func (g *Game) removeMonster(m *Monster) {
 	g.removeSprite(m.sprite)
 	m.sprite = nil
 	m = nil
+}
+
+func (m *Monster) kill() {
+	s := game.addSprite(m.sprite.kind+"-dead", m.sprite.x, m.sprite.y, 0, 0, 0)
+	game.removeMonster(m)
+	time.AfterFunc(time.Millisecond*300, func() {
+		game.removeSprite(s)
+	})
 }

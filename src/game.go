@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"os"
 	"sort"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -14,21 +15,59 @@ import (
 // Holds most core game data
 type Game struct {
 	mapdata     [][]int                // Map data is stored in a 2D array, 0 = empty, 1+ = wall
-	mapWidth    int                    // Held as convenience
-	mapHeight   int                    // Held as convenience
 	player      Player                 // Player object
-	level       int                    // Which level we're on
 	sprites     []*Sprite              // All sprites on the map, used for depth sorting
 	monsters    map[uint64]*Monster    // Monsters on the map
 	projectiles map[uint64]*Projectile // Projectiles currently in the game
 	items       map[uint64]*Item       // Items currently in the game
-	fc          int
+	ticks       int                    // Tick count
+	paused      bool                   // Whether the game is paused
+	mapName     string
 }
 
 // ===========================================================
 // Update loop handles inputs
 // ===========================================================
 func (g *Game) Update() error {
+	if titleScreen {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) ||
+			inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
+			startGame()
+		}
+
+		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+			os.Exit(0)
+		}
+
+		if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+			titleLevelIndex = (titleLevelIndex + 1) % len(titleLevels)
+			playSound("menu_click", 1, false)
+		}
+
+		if inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+			titleLevelIndex--
+			if titleLevelIndex < 0 {
+				titleLevelIndex = len(titleLevels) - 1
+			}
+			playSound("menu_click", 1, false)
+		}
+
+		return nil
+	}
+
+	g.ticks++
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		g.paused = !g.paused
+	}
+
+	if g.paused {
+		if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
+			g.returnToTitleScreen()
+		}
+		return nil
+	}
+
 	// Update rest of game state
 	g.updateMonsters()
 	g.updateProjectiles()
@@ -79,16 +118,14 @@ func (g *Game) Update() error {
 // Main draw function
 // ===========================================================
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.fc++
+
+	if titleScreen {
+		renderTitle(screen)
+		return
+	}
 
 	// Render the ceiling and floor
-	floorOp := &ebiten.DrawImageOptions{}
-	floorOp.GeoM.Scale(floorScaleW, floorScaleH)
-	floorOp.GeoM.Translate(0, float64(winHeightHalf))
 	screen.DrawImage(floorImage, floorOp)
-	ceilOp := &ebiten.DrawImageOptions{}
-	ceilOp.GeoM.Translate(0, 0)
-	ceilOp.GeoM.Scale(floorScaleW, floorScaleH)
 	screen.DrawImage(ceilImage, ceilOp)
 
 	// Cast rays to render player's view
@@ -152,6 +189,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Sprite rendering loop(s)...
 	// Update sprite distances
 	for i := range g.sprites {
+		if g.sprites[i] == nil {
+			continue
+		}
 		g.sprites[i].dist = math.Sqrt(math.Pow(g.player.x-g.sprites[i].x, 2) + math.Pow(g.player.y-g.sprites[i].y, 2))
 	}
 	// TODO: Can we optimize here?
@@ -167,10 +207,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	g.overlay(screen)
 
-	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f", ebiten.CurrentFPS(), g.player.x, g.player.y)
+	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.mapName, Version)
 	ebitenutil.DebugPrint(screen, msg)
 
 	renderHud(screen, g)
+
+	if g.paused {
+		renderPauseScreen(screen)
+	}
 }
 
 // ===========================================================
@@ -187,5 +231,16 @@ func (g *Game) getWallAt(x, y float64) (int, int, int) {
 	// NOTE: Bounds checking is not done, the map must have an outer wall
 	mapCellX := int(x / cellSize)
 	mapCellY := int(y / cellSize)
+	if mapCellX < 0 || mapCellY < 0 || mapCellX >= mapSize || mapCellY >= mapSize {
+		return 0, 0, 0
+	}
+
 	return g.mapdata[mapCellX][mapCellY], mapCellX, mapCellY
+}
+
+func (g *Game) returnToTitleScreen() {
+	soundStopAmbience()
+	soundStartTitleScreen()
+	titleScreen = true
+	g.paused = true
 }

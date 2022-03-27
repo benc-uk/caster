@@ -175,6 +175,9 @@ func main() {
 		paused: false,
 	}
 
+	// HACK: ONLY FOR DEBUGGING/TESTING
+	// startGame()
+
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}

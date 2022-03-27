@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -93,10 +94,16 @@ func (g *Game) Update() error {
 		g.player.attack()
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.player.move()
-	} else {
-		g.player.moveSpeed = g.player.moveSpeedMin
+	// When move keys are first pressed, reset the acceleration timer
+	if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyDown) ||
+		inpututil.IsKeyJustPressed(ebiten.KeyW) || inpututil.IsKeyJustPressed(ebiten.KeyS) {
+		g.player.moveStartTime = time.Now().UnixMicro()
+	}
+
+	// Now handle the actual move as long as move keys are held
+	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) ||
+		ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
+		g.player.move(time.Now().UnixMicro() - g.player.moveStartTime)
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyO) {

@@ -15,7 +15,6 @@ type Player struct {
 	cellX     int
 	cellY     int
 	angle     float64 // Facing angle in radians
-	moveSpeed float64 // Current moving speed
 	turnSpeed float64 // Current turning speed
 	health    int
 	mana      int
@@ -25,12 +24,12 @@ type Player struct {
 	// These are effectively constants, but we hold them in the player
 	fov            float64 // Field of view
 	size           float64 // Used for collision detection with walls
-	moveSpeedMin   float64 // Base move speed
-	moveSpeedMax   float64 // Fastest we can go
-	moveSpeedAccel float64 // Acceleration per keypress of move speed
+	moveStartTime  int64
+	moveFunc       func(int64) float64
 	turnSpeedMin   float64 // Base turn speed
 	turnSpeedMax   float64 // Max turn speed
 	turnSpeedAccel float64 // Acceleration per keypress of turn speed
+
 }
 
 func newPlayer(cellX, cellY int) Player {
@@ -38,13 +37,10 @@ func newPlayer(cellX, cellY int) Player {
 		x:                cellSize*float64(cellX) + cellSize/2,
 		y:                cellSize*float64(cellY) + cellSize/2,
 		angle:            0,
-		moveSpeed:        cellSize / 32,
-		moveSpeedMin:     cellSize / 32,
-		moveSpeedMax:     cellSize / 8,
-		moveSpeedAccel:   0.15,
-		turnSpeed:        math.Pi / 150,
-		turnSpeedMin:     math.Pi / 150,
-		turnSpeedMax:     math.Pi / 40,
+		moveStartTime:    0.0,
+		turnSpeed:        math.Pi / 150.0,
+		turnSpeedMin:     math.Pi / 150.0,
+		turnSpeedMax:     math.Pi / 40.0,
 		turnSpeedAccel:   0.0005,
 		fov:              fov,
 		size:             cellSize / 16.0,
@@ -53,18 +49,23 @@ func newPlayer(cellX, cellY int) Player {
 		mana:             100,
 		cellX:            cellX,
 		cellY:            cellY,
+
+		moveFunc: func(t int64) float64 {
+			min := float64(cellSize) / 64.0
+			max := float64(cellSize) / 10.0
+			return math.Min(min+math.Pow(float64(t)/250000, 3), max)
+		},
 	}
 }
 
-func (p *Player) move() {
-	ms := p.moveSpeed
+func (p *Player) move(t int64) {
+	speed := p.moveFunc(t)
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
-		ms = -p.moveSpeed
+		speed = -speed
 	}
-	p.moveSpeed = math.Min(p.moveSpeed+p.moveSpeedAccel, p.moveSpeedMax)
 
-	newX := p.x + math.Cos(p.angle)*ms
-	newY := p.y + math.Sin(p.angle)*ms
+	newX := p.x + math.Cos(p.angle)*speed
+	newY := p.y + math.Sin(p.angle)*speed
 
 	// Check if we're going to collide with a wall
 	if wall, _, _ := p.checkWallCollision(newX, newY); wall > 0 {
@@ -159,5 +160,5 @@ func (p *Player) attack() {
 	if p.mana < 0 {
 		p.mana = 0.0
 	}
-	game.addProjectile("magic_1", p.x, p.y, p.angle, p.moveSpeedMax*1.1, 40)
+	game.addProjectile("magic_1", p.x, p.y, p.angle, (float64(cellSize) / 9.0), 40)
 }

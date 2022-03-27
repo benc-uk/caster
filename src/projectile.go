@@ -26,21 +26,22 @@ func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed flo
 }
 
 func (g *Game) updateProjectiles() {
-	if g.fc%20 != 0 {
-		si := spriteImages["magic_1"]
-		sir := ebiten.NewImage(32, 32)
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(-16, -16)
-		op.GeoM.Rotate(math.Pi / 4)
-		op.GeoM.Translate(16, 16)
-
-		sir.Clear()
-		sir.DrawImage(si, op)
-		spriteImages["magic_1"] = sir
-	}
 
 	for id := range g.projectiles {
 		sprite := g.projectiles[id].sprite
+
+		// Animate and rotate the projectile sprite
+		if g.fc%5 == 0 {
+			rotatedImg := ebiten.NewImageFromImage(sprite.image)
+			rotateOp := &ebiten.DrawImageOptions{}
+			rotateOp.GeoM.Translate(-spriteImgSizeH, -spriteImgSizeH)
+			rotateOp.GeoM.Rotate(math.Pi / 4)
+			rotateOp.GeoM.Translate(spriteImgSizeH, spriteImgSizeH)
+			rotatedImg.Clear()
+			rotatedImg.DrawImage(sprite.image, rotateOp)
+			sprite.image = rotatedImg
+		}
+
 		if sprite.speed <= 0 {
 			continue
 		}

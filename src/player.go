@@ -160,5 +160,5 @@ func (p *Player) attack() {
 	if p.mana < 0 {
 		p.mana = 0.0
 	}
-	game.addProjectile("magic_1", p.x, p.y, p.angle, p.moveSpeedMax*1.1, 40)
+	game.addProjectile("magic_1", p.x, p.y, p.angle, 3, 40) //p.moveSpeedMax*1.1, 40)
 }

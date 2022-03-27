@@ -134,7 +134,7 @@ func (s *Sprite) draw(screen *ebiten.Image, g *Game) {
 	spriteOp.ColorM.Scale(1, 1, 1, s.alpha)
 
 	// Slice the sprite image into strips and render each one
-	spriteImg := spriteImages[s.kind]
+	spriteImg := s.image
 	for slice := 0; slice < spriteImgSize; slice++ {
 		// Each loop move the slice along with scaling taken into account
 		spriteOp.GeoM.Translate(spriteScale, 0)

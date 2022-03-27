@@ -12,6 +12,8 @@ import (
 type Player struct {
 	x         float64 // Player position x
 	y         float64 // Player position y
+	cellX     int
+	cellY     int
 	angle     float64 // Facing angle in radians
 	moveSpeed float64 // Current moving speed
 	turnSpeed float64 // Current turning speed
@@ -31,24 +33,26 @@ type Player struct {
 	turnSpeedAccel float64 // Acceleration per keypress of turn speed
 }
 
-func newPlayer() Player {
+func newPlayer(cellX, cellY int) Player {
 	return Player{
-		x:                cellSize*1 + cellSize/2,
-		y:                cellSize*1 + cellSize/2,
+		x:                cellSize*float64(cellX) + cellSize/2,
+		y:                cellSize*float64(cellY) + cellSize/2,
 		angle:            0,
 		moveSpeed:        cellSize / 32,
 		moveSpeedMin:     cellSize / 32,
-		moveSpeedMax:     cellSize / 6,
-		moveSpeedAccel:   0.2,
+		moveSpeedMax:     cellSize / 8,
+		moveSpeedAccel:   0.15,
 		turnSpeed:        math.Pi / 150,
 		turnSpeedMin:     math.Pi / 150,
 		turnSpeedMax:     math.Pi / 40,
-		turnSpeedAccel:   0.001,
+		turnSpeedAccel:   0.0005,
 		fov:              fov,
 		size:             cellSize / 16.0,
 		playingFootsteps: false,
-		health:           100,
-		mana:             100,
+		health:           10000,
+		mana:             10000,
+		cellX:            cellX,
+		cellY:            cellY,
 	}
 }
 
@@ -71,6 +75,19 @@ func (p *Player) move() {
 	// Update player position
 	p.x = newX
 	p.y = newY
+	p.cellX = int(math.Floor(p.x / cellSize))
+	p.cellY = int(math.Floor(p.y / cellSize))
+
+	// Check items near the player we're in and pick them up
+	for _, item := range game.items {
+		if item.cellX != p.cellX || item.cellY != p.cellY {
+			continue
+		}
+
+		item.pickUpFunc(p)
+		playSound("zap", 0.3, false)
+		game.removeItem(item)
+	}
 
 	// Footstep sound
 	if !p.playingFootsteps {
@@ -81,6 +98,13 @@ func (p *Player) move() {
 			p.playingFootsteps = false
 		})
 	}
+}
+
+func (p *Player) moveToCell(cellX, cellY int) {
+	p.cellX = cellX
+	p.cellY = cellY
+	p.x = cellSize*float64(cellX) + cellSize/2
+	p.y = cellSize*float64(cellY) + cellSize/2
 }
 
 func (p Player) checkWallCollision(x, y float64) (int, int, int) {
@@ -136,5 +160,5 @@ func (p *Player) attack() {
 	if p.mana < 0 {
 		p.mana = 0.0
 	}
-	game.addProjectile("zap", p.x, p.y, p.angle, p.moveSpeedMax*1.1, 40)
+	game.addProjectile("magic_1", p.x, p.y, p.angle, p.moveSpeedMax*1.1, 40)
 }

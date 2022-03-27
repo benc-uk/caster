@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 	"math/rand"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Projectile struct {
@@ -13,6 +15,7 @@ type Projectile struct {
 
 func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed float64, damage int) {
 	s := g.addSprite(kind, x, y, angle, speed, cellSize/16.0)
+	s.alpha = 0.5
 
 	id := rand.Uint64()
 	g.projectiles[id] = &Projectile{
@@ -23,6 +26,19 @@ func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed flo
 }
 
 func (g *Game) updateProjectiles() {
+	if g.fc%20 != 0 {
+		si := spriteImages["magic_1"]
+		sir := ebiten.NewImage(32, 32)
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(-16, -16)
+		op.GeoM.Rotate(math.Pi / 4)
+		op.GeoM.Translate(16, 16)
+
+		sir.Clear()
+		sir.DrawImage(si, op)
+		spriteImages["magic_1"] = sir
+	}
+
 	for id := range g.projectiles {
 		sprite := g.projectiles[id].sprite
 		if sprite.speed <= 0 {

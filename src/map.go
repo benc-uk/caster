@@ -42,8 +42,7 @@ func (g *Game) loadMap(filename string) {
 
 				// Player
 				if char == '*' {
-					g.player.x = float64(x)*cellSize + cellSize/2
-					g.player.y = float64(y)*cellSize + cellSize/2
+					g.player.moveToCell(x, y)
 				}
 
 				if char == '#' {
@@ -68,9 +67,6 @@ func (g *Game) loadMap(filename string) {
 				}
 
 				if itemRe.MatchString(string(char)) {
-					x := float64(x)*cellSize + cellSize/2
-					y := float64(y)*cellSize + cellSize/2
-
 					switch char {
 					case 'P':
 						g.addItem("potion", x, y, 1.7, 0, 1.0)

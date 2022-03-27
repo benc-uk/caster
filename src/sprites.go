@@ -29,6 +29,7 @@ type Sprite struct {
 	speed float64
 	size  float64
 	image *ebiten.Image
+	alpha float64
 }
 
 func (g *Game) addSprite(kind string, x, y float64, angle float64, speed float64, size float64) *Sprite {
@@ -45,6 +46,7 @@ func (g *Game) addSprite(kind string, x, y float64, angle float64, speed float64
 		speed: speed,
 		size:  size,
 		image: spriteImages[kind],
+		alpha: 1.0,
 	}
 
 	g.sprites = append(g.sprites, s)
@@ -93,16 +95,16 @@ func initSprites() {
 // ===========================================================
 // Draws a sprite on the screen with correct depth
 // ===========================================================
-func (sprite *Sprite) draw(screen *ebiten.Image, g *Game) {
-	if sprite.dist > viewDistance {
+func (s *Sprite) draw(screen *ebiten.Image, g *Game) {
+	if s.dist > viewDistance {
 		return
 	}
 
 	// Sizing and scaling based on depth
-	spriteDist := (1.0 / sprite.dist)
+	spriteDist := (1.0 / s.dist)
 	spriteScale := spriteDist * float64(winHeight)
 	// Direction to player
-	spriteDir := math.Atan2(sprite.y-g.player.y, sprite.x-g.player.x)
+	spriteDir := math.Atan2(s.y-g.player.y, s.x-g.player.x)
 
 	// I don't know what this really does, actually no fucking clue
 	for ; spriteDir-g.player.angle > math.Pi; spriteDir -= 2 * math.Pi {
@@ -129,16 +131,17 @@ func (sprite *Sprite) draw(screen *ebiten.Image, g *Game) {
 	spriteOp := &ebiten.DrawImageOptions{}
 	spriteOp.GeoM.Scale(spriteScale, spriteScale)
 	spriteOp.GeoM.Translate(hOffset, vOffset)
+	spriteOp.ColorM.Scale(1, 1, 1, s.alpha)
 
 	// Slice the sprite image into strips and render each one
-	spriteImg := sprite.image
+	spriteImg := spriteImages[s.kind]
 	for slice := 0; slice < spriteImgSize; slice++ {
 		// Each loop move the slice along with scaling taken into account
 		spriteOp.GeoM.Translate(spriteScale, 0)
 
 		// Check the depth buffer, and skip if the sprite is a wall
 		depthBufferX := int(math.Floor(spriteOp.GeoM.Element(0, 2)) / viewRaysRatio)
-		if depthBufferX < 0 || depthBufferX >= viewRays || depthBuffer[int(depthBufferX)] < sprite.dist {
+		if depthBufferX < 0 || depthBufferX >= viewRays || depthBuffer[int(depthBufferX)] < s.dist {
 			continue
 		}
 

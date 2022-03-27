@@ -13,13 +13,20 @@ help: ## 💬 This help message :)
 	@figlet $@
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-build: ## 🔨 Build binaries
+build-linux: ## 🔨 Build binaries for Linux
 	@figlet $@
 	@mkdir -p bin
 	go mod tidy
 	GOOS=linux go build -o bin/caster $(GO_PKG)/...
+
+build-win: ## 🔨 Build binaries for Windows
+	@figlet $@
+	@mkdir -p bin
+	go mod tidy
 	GOOS=windows go build -o bin/caster.exe $(GO_PKG)/...
 
+build: build-win build-linux ## 🔨 Build binaries
+	
 clean: ## ♻️  Clean up
 	@figlet $@
 	@rm -rf bin
@@ -38,9 +45,8 @@ run: ## 🏃 Run application
 	@figlet $@ || true
 	air -c .air.toml
 
-windows: ## 💻 Bundle Windows version
+windows: build-win ## 💻 Bundle Windows version
 	@figlet $@
-	make build
 	cp bin/caster.exe $(WIN_DIR)/caster.exe
 	cp -r ./textures $(WIN_DIR)/
 	cp -r ./sprites $(WIN_DIR)/

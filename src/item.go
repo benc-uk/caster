@@ -1,28 +1,38 @@
 package main
 
 import (
-	"log"
 	"math/rand"
 )
 
 type Item struct {
 	id         uint64
 	sprite     *Sprite
-	pickUpFunc func(*Game)
+	pickUpFunc func(*Player)
+	cellX      int
+	cellY      int
 }
 
-func (g *Game) addItem(kind string, x, y float64, angle float64, speed float64, damage float64) {
+func (g *Game) addItem(kind string, cellX, cellY int, angle float64, speed float64, damage float64) {
+	x := float64(cellX)*cellSize + cellSize/2
+	y := float64(cellY)*cellSize + cellSize/2
 	s := g.addSprite(kind, x, y, angle, speed, cellSize/16.0)
 
 	id := rand.Uint64()
-	g.items[id] = &Item{
-		id:     id,
-		sprite: s,
-		pickUpFunc: func(g *Game) {
-			g.player.health += 10
-			log.Printf("Picked up item: %+v %s", id, s.kind)
-		},
+	item := &Item{
+		id:         id,
+		sprite:     s,
+		cellX:      cellX,
+		cellY:      cellY,
+		pickUpFunc: func(p *Player) {},
 	}
+
+	if kind == "potion" {
+		item.pickUpFunc = func(p *Player) {
+			p.mana += 10
+		}
+	}
+
+	g.items[id] = item
 }
 
 func (g *Game) removeItem(i *Item) {

@@ -177,7 +177,7 @@ func main() {
 		items:       make(map[uint64]*Item, 0),
 	}
 
-	game.player = newPlayer()
+	game.player = newPlayer(1, 1)
 	log.Printf("Player created %+v", game.player)
 
 	game.level = 1

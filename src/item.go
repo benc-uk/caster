@@ -15,7 +15,7 @@ type Item struct {
 func (g *Game) addItem(kind string, cellX, cellY int, angle float64, speed float64, damage float64) {
 	x := float64(cellX)*cellSize + cellSize/2
 	y := float64(cellY)*cellSize + cellSize/2
-	s := g.addSprite(kind, x, y, angle, speed, cellSize/16.0)
+	s := g.addSprite("items/"+kind, x, y, angle, speed, cellSize/16.0)
 
 	id := rand.Uint64()
 	item := &Item{

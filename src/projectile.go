@@ -14,7 +14,7 @@ type Projectile struct {
 }
 
 func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed float64, damage int) {
-	s := g.addSprite(kind, x, y, angle, speed, cellSize/16.0)
+	s := g.addSprite("effects/"+kind, x, y, angle, speed, cellSize/16.0)
 	s.alpha = 0.5
 
 	id := rand.Uint64()

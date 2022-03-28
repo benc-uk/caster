@@ -10,26 +10,25 @@ import (
 )
 
 type Player struct {
-	x         float64 // Player position x
-	y         float64 // Player position y
-	cellX     int
-	cellY     int
-	angle     float64 // Facing angle in radians
-	turnSpeed float64 // Current turning speed
-	health    int
-	mana      int
+	x      float64 // Player position x
+	y      float64 // Player position y
+	cellX  int
+	cellY  int
+	angle  float64 // Facing angle in radians
+	health int
+	mana   int
 
 	playingFootsteps bool
 
 	// These are effectively constants, but we hold them in the player
-	fov            float64 // Field of view
-	size           float64 // Used for collision detection with walls
-	moveStartTime  int64
-	moveFunc       func(int64) float64
-	turnSpeedMin   float64 // Base turn speed
-	turnSpeedMax   float64 // Max turn speed
-	turnSpeedAccel float64 // Acceleration per keypress of turn speed
+	fov  float64 // Field of view
+	size float64 // Used for collision detection with walls
 
+	// These handle movement and turning
+	moveStartTime int64
+	moveFunc      func(int64) float64
+	turnStartTime int64
+	turnFunc      func(int64) float64
 }
 
 func newPlayer(cellX, cellY int) Player {
@@ -38,10 +37,7 @@ func newPlayer(cellX, cellY int) Player {
 		y:                cellSize*float64(cellY) + cellSize/2,
 		angle:            0,
 		moveStartTime:    0.0,
-		turnSpeed:        math.Pi / 150.0,
-		turnSpeedMin:     math.Pi / 150.0,
-		turnSpeedMax:     math.Pi / 40.0,
-		turnSpeedAccel:   0.0005,
+		turnStartTime:    0.0,
 		fov:              fov,
 		size:             cellSize / 16.0,
 		playingFootsteps: false,
@@ -51,15 +47,27 @@ func newPlayer(cellX, cellY int) Player {
 		cellY:            cellY,
 
 		moveFunc: func(t int64) float64 {
-			min := float64(cellSize) / 64.0
-			max := float64(cellSize) / 10.0
-			return math.Min(min+math.Pow(float64(t)/250000, 3), max)
+			min := float64(cellSize) / 50.0
+			max := float64(cellSize) / 16.0
+			return math.Min(min+math.Pow(float64(t)/250000, 2), max)
+		},
+
+		turnFunc: func(t int64) float64 {
+			min := math.Pi / 140.0
+			max := math.Pi / 60.0
+			return math.Min(min+math.Pow(float64(t)/2500000, 3), max)
 		},
 	}
 }
 
-func (p *Player) move(t int64) {
+func (p *Player) turn(t int64, direction float64) {
+	p.angle = p.angle + p.turnFunc(t)*direction
+}
+
+func (p *Player) move(t int64, direction float64) {
+	// Invoke the move function
 	speed := p.moveFunc(t)
+
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		speed = -speed
 	}

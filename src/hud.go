@@ -45,9 +45,10 @@ func renderTitle(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(x), float64(y))
-			screen.DrawImage(wallImages[(x+y)%9+1], op)
+			screen.DrawImage(imageCache[fmt.Sprintf("walls/%s", (x+y)%9+1)], op)
 		}
 	}
+
 	ebitenutil.DrawRect(screen, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 160})
 
 	msg := "Crypt Caster"
@@ -68,7 +69,7 @@ func renderTitle(screen *ebiten.Image) {
 	op.GeoM.Scale(5.0, 5.0)
 	op.Filter = ebiten.FilterNearest
 	op.GeoM.Translate(float64(winWidth)-(38*magicSprite), float64(winHeight/3)-float64(textRect.Dy())/2.0-(18*magicSprite))
-	screen.DrawImage(spriteImages["ball"], op)
+	screen.DrawImage(imageCache["items/ball"], op)
 
 	msg = fmt.Sprintf("%d. %s", titleLevelIndex+1, titleLevels[titleLevelIndex])
 	textRect = text.BoundString(gameFont, msg)

@@ -4,11 +4,8 @@ import (
 	"image"
 	"log"
 	"math"
-	"os"
-	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 const spriteImgSize = 32
@@ -16,9 +13,6 @@ const spriteImgSizeH = 16
 
 // Used for rendering sprites with occlusion
 var depthBuffer []float64
-
-// Global list of ALL sprites, used for depth sorting
-var spriteImages map[string]*ebiten.Image
 
 type Sprite struct {
 	x     float64
@@ -33,7 +27,7 @@ type Sprite struct {
 }
 
 func (g *Game) addSprite(kind string, x, y float64, angle float64, speed float64, size float64) *Sprite {
-	if spriteImages[kind] == nil {
+	if imageCache[kind] == nil {
 		log.Printf("ERROR! Sprite image not found: %s", kind)
 		return nil
 	}
@@ -45,7 +39,7 @@ func (g *Game) addSprite(kind string, x, y float64, angle float64, speed float64
 		angle: angle,
 		speed: speed,
 		size:  size,
-		image: spriteImages[kind],
+		image: imageCache[kind],
 		alpha: 1.0,
 	}
 
@@ -73,23 +67,23 @@ func (g *Game) removeSprite(sprite *Sprite) {
 // ===========================================================
 // Load sprites at startup
 // ===========================================================
-func initSprites() {
-	var err error
+// func initSprites() {
+// 	var err error
 
-	log.Printf("Loading sprites...")
-	spriteDir, err := os.ReadDir("./sprites")
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	log.Printf("Loading sprites...")
+// 	spriteDir, err := os.ReadDir("./sprites")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	for _, file := range spriteDir {
-		name := strings.TrimSuffix(file.Name(), ".png")
-		spriteImages[name], _, err = ebitenutil.NewImageFromFile("./sprites/" + file.Name())
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
+// 	for _, file := range spriteDir {
+// 		name := strings.TrimSuffix(file.Name(), ".png")
+// 		spriteImages[name], _, err = ebitenutil.NewImageFromFile("./sprites/" + file.Name())
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 	}
+// }
 
 //
 // ===========================================================

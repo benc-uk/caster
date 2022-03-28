@@ -21,7 +21,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 	angle := rand.Float64() * 2 * math.Pi
 	speed := rand.Float64()*0.5 + 0.5
 
-	s := g.addSprite(kind, cx, cy, angle, speed, monsterSize)
+	s := g.addSprite("monsters/"+kind, cx, cy, angle, speed, monsterSize)
 
 	id := rand.Uint64()
 	mon := &Monster{
@@ -62,11 +62,11 @@ func (g *Game) updateMonsters() {
 
 		// Animations!
 		if g.ticks%20 == 0 {
-			if spriteImages[sprite.kind+"-1"] != nil {
-				if mon.sprite.image == spriteImages[sprite.kind+"-1"] {
-					mon.sprite.image = spriteImages[sprite.kind]
+			if imageCache[sprite.kind+"-1"] != nil {
+				if mon.sprite.image == imageCache[sprite.kind+"-1"] {
+					mon.sprite.image = imageCache[sprite.kind]
 				} else {
-					mon.sprite.image = spriteImages[sprite.kind+"-1"]
+					mon.sprite.image = imageCache[sprite.kind+"-1"]
 				}
 			}
 		}

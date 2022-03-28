@@ -7,12 +7,10 @@ import (
 	"math"
 	"math/rand"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 var game *Game
@@ -49,12 +47,7 @@ var overlayImage = ebiten.NewImage(mapSize*overlayCellSize, mapSize*overlayCellS
 var overlayZoom = 5.0
 var overlayShown = false
 
-// Global texture and sprite caches for walls and floors
-var wallImages []*ebiten.Image
-
 // Global/precomputed vars for drawing floor and ceiling
-var floorImage *ebiten.Image
-var ceilImage *ebiten.Image
 var floorOp *ebiten.DrawImageOptions
 var ceilOp *ebiten.DrawImageOptions
 
@@ -62,8 +55,7 @@ var ceilOp *ebiten.DrawImageOptions
 // Load textures & sprites etc
 // ===========================================================
 func init() {
-	wallImages = make([]*ebiten.Image, 25)
-	spriteImages = make(map[string]*ebiten.Image, 10)
+	loadImages()
 
 	// Find all maps in the maps folder
 	maps, err := filepath.Glob("maps/*.map")
@@ -73,21 +65,6 @@ func init() {
 	for _, mapFile := range maps {
 		titleLevels = append(titleLevels, strings.TrimSuffix(filepath.Base(mapFile), ".map"))
 	}
-
-	log.Printf("Loading wall textures...")
-	for i := 1; i < 25; i++ {
-		img, _, err := ebitenutil.NewImageFromFile("./textures/" + strconv.Itoa(i) + ".png")
-		if err == nil {
-
-			wallImages[i] = img
-		}
-	}
-
-	initSprites()
-
-	log.Printf("Loading floor & ceiling textures...")
-	floorImage, _, _ = ebitenutil.NewImageFromFile("./textures/floor.png")
-	ceilImage, _, _ = ebitenutil.NewImageFromFile("./textures/ceil.png")
 
 	initSound()
 }
@@ -176,7 +153,7 @@ func main() {
 	}
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	// startGame()
+	startGame()
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

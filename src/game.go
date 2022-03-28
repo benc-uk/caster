@@ -73,17 +73,29 @@ func (g *Game) Update() error {
 	g.updateMonsters()
 	g.updateProjectiles()
 
-	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.player.angle += g.player.turnSpeed
+	// When move keys are first pressed, reset the acceleration timer
+	if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyDown) ||
+		inpututil.IsKeyJustPressed(ebiten.KeyW) || inpututil.IsKeyJustPressed(ebiten.KeyS) {
+		g.player.moveStartTime = time.Now().UnixMicro()
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.player.angle -= g.player.turnSpeed
+	// Now handle the actual move as long as move keys are held
+	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) {
+		g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, -1)
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
+		g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, +1)
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.player.turnSpeed = math.Min(g.player.turnSpeed+g.player.turnSpeedAccel, g.player.turnSpeedMax)
-	} else {
-		g.player.turnSpeed = g.player.turnSpeedMin
+	// When turn keys are first pressed, reset the acceleration timer
+	if inpututil.IsKeyJustPressed(ebiten.KeyRight) || inpututil.IsKeyJustPressed(ebiten.KeyD) || inpututil.IsKeyJustPressed(ebiten.KeyLeft) || inpututil.IsKeyJustPressed(ebiten.KeyA) {
+		g.player.turnStartTime = time.Now().UnixMicro()
+	}
+	// Now handle the actual turn as long as turn keys are held
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
+		g.player.turn(time.Now().UnixMicro()-g.player.turnStartTime, -1)
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
+		g.player.turn(time.Now().UnixMicro()-g.player.turnStartTime, +1)
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
@@ -92,18 +104,6 @@ func (g *Game) Update() error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyShift) {
 		g.player.attack()
-	}
-
-	// When move keys are first pressed, reset the acceleration timer
-	if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyDown) ||
-		inpututil.IsKeyJustPressed(ebiten.KeyW) || inpututil.IsKeyJustPressed(ebiten.KeyS) {
-		g.player.moveStartTime = time.Now().UnixMicro()
-	}
-
-	// Now handle the actual move as long as move keys are held
-	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyDown) ||
-		ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.player.move(time.Now().UnixMicro() - g.player.moveStartTime)
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyO) {
@@ -132,8 +132,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Render the ceiling and floor
-	screen.DrawImage(floorImage, floorOp)
-	screen.DrawImage(ceilImage, ceilOp)
+	screen.DrawImage(imageCache["other/floor"], floorOp)
+	screen.DrawImage(imageCache["other/ceil"], ceilOp)
 
 	// Cast rays to render player's view
 	for i := 0; i < viewRays; i++ {
@@ -166,8 +166,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 
 			// Get wall texture column at the hit point
-			textureColStrip := wallImages[wallIndex].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+			textureColStrip := imageCache[fmt.Sprintf("walls/%d", wallIndex)].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
 
+			// decoStrip := spriteImages["torch_1"].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+			// if g.ticks%20 < 10 {
+			// 	decoStrip = spriteImages["torch_2"].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+			// }
 			op := &ebiten.DrawImageOptions{}
 
 			// Scale the height of rendered wall strip to the distance and correct fish-eye effect

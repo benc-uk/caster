@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Map Editor</title>
+    <script src="./app.js"></script>
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body
+    x-data="data"
+    x-init="initApp"
+    @contextmenu.prevent=""
+    @keydown="mode = $event.key"
+    @keyup="mode = null"
+  >
+    <h1>MODE: <span x-text="mode"></span></h1>
+    <div class="map">
+      <template x-for="(row, y) in map">
+        <div class="mapRow">
+          <template x-for="(cell, x) in row">
+            <div
+              class="cell"
+              @click="cellClick(x, y, $event)"
+              @mousemove="cellClick(x, y, $event)"
+              @contextmenu="cellClear(x, y)"
+              :class="getCell(x,y).wall>0 ? 'wall' : ''"
+              :style="{ 'background-image': getImageForCell(x,y) }"
+            >
+              <div
+                class="cellExtra"
+                :style="{ 'background-image': getOverlayForCell(x,y) }"
+              >
+                &nbsp;
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+  </body>
+</html>

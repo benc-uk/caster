@@ -39,21 +39,21 @@ func (g *Game) addMonster(kind string, x, y int) {
 	g.monsters[id] = mon
 }
 
-func (m *Monster) checkWallCollision(x, y float64) (int, int, int) {
+func (m *Monster) checkWallCollision(x, y float64) *Wall {
 	size := m.sprite.size
-	if wall, x, y := game.getWallAt(x+size, y); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x+size, y); wall != nil {
+		return wall
 	}
-	if wall, x, y := game.getWallAt(x-size, y); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x-size, y); wall != nil {
+		return wall
 	}
-	if wall, x, y := game.getWallAt(x, y+size); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x, y+size); wall != nil {
+		return wall
 	}
-	if wall, x, y := game.getWallAt(x, y-size); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x, y-size); wall != nil {
+		return wall
 	}
-	return 0, 0, 0
+	return nil
 }
 
 func (g *Game) updateMonsters() {
@@ -77,7 +77,7 @@ func (g *Game) updateMonsters() {
 
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
 		newY := sprite.y + math.Sin(sprite.angle)*sprite.speed
-		if wi, _, _ := g.getWallAt(newX, newY); wi > 0 {
+		if wall := g.getWallAt(newX, newY); wall != nil {
 			mon.sprite.angle = mon.sprite.angle + math.Pi
 		}
 

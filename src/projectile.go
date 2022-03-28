@@ -43,7 +43,7 @@ func (g *Game) updateProjectiles() {
 
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
 		newY := sprite.y + math.Sin(sprite.angle)*sprite.speed
-		if wi, _, _ := g.getWallAt(newX, newY); wi > 0 {
+		if wall := g.getWallAt(newX, newY); wall != nil {
 			g.removeProjectile(g.projectiles[id])
 		}
 

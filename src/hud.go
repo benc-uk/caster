@@ -170,11 +170,8 @@ func (g *Game) overlay(screen *ebiten.Image) {
 	// Draw the map
 	for y := 0; y < mapSize; y++ {
 		for x := 0; x < mapSize; x++ {
-			if g.mapdata[x][y] != 0 {
+			if g.mapdata[x][y] != nil {
 				c := color.RGBA{255, 255, 255, 58}
-				if g.mapdata[x][y] > 9 {
-					c = color.RGBA{205, 127, 50, 255}
-				}
 				ebitenutil.DrawRect(overlayImage, float64(x*overlayCellSize), float64(y*overlayCellSize), float64(overlayCellSize), float64(overlayCellSize), c)
 			}
 		}

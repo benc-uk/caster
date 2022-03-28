@@ -76,7 +76,7 @@ func (p *Player) move(t int64, direction float64) {
 	newY := p.y + math.Sin(p.angle)*speed
 
 	// Check if we're going to collide with a wall
-	if wall, _, _ := p.checkWallCollision(newX, newY); wall > 0 {
+	if wall := p.checkWallCollision(newX, newY); wall != nil {
 		// Hit a wall so don't move
 		return
 	}
@@ -115,46 +115,43 @@ func (p *Player) moveToCell(cellX, cellY int) {
 	p.y = cellSize*float64(cellY) + cellSize/2
 }
 
-func (p Player) checkWallCollision(x, y float64) (int, int, int) {
-	if wall, x, y := game.getWallAt(x+p.size, y); wall > 0 {
-		return wall, x, y
+func (p *Player) checkWallCollision(x, y float64) *Wall {
+	size := p.size
+	if wall := game.getWallAt(x+size, y); wall != nil {
+		return wall
 	}
-	if wall, x, y := game.getWallAt(x-p.size, y); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x-size, y); wall != nil {
+		return wall
 	}
-	if wall, x, y := game.getWallAt(x, y+p.size); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x, y+size); wall != nil {
+		return wall
 	}
-	if wall, x, y := game.getWallAt(x, y-p.size); wall > 0 {
-		return wall, x, y
+	if wall := game.getWallAt(x, y-size); wall != nil {
+		return wall
 	}
-	return 0, 0, 0
+	return nil
 }
 
-func (p Player) fireRay(distance float64) (int, int, int) {
+func (p Player) fireRay(distance float64) *Wall {
 	// Fire a ray in the direction we're facing
 	for t := 0.0; t < distance; t += rayStepT {
 		// Get hit point
 		cx := p.x + (t * math.Cos(p.angle))
 		cy := p.y + (t * math.Sin(p.angle))
 		// Detect collision with walls
-		wallIndex, wx, wy := game.getWallAt(cx, cy)
-		if wallIndex > 0 {
-			return wallIndex, wx, wy
+		wall := game.getWallAt(cx, cy)
+		if wall != nil {
+			return wall
 		}
 	}
-	return 0, 0, 0
+	return nil
 }
 
 func (p Player) use() {
-	wallIndex, wx, wy := p.fireRay(cellSize)
-	if wallIndex > 0 {
-		if wallIndex == doorWallIndex {
-			game.mapdata[wx][wy] = 0
-			playSound("door_open", 0.3, false)
-		} else {
-			playSound("grunt", 1, false)
-		}
+	wall := p.fireRay(cellSize)
+
+	if wall != nil {
+		wall.actionFunc(game)
 	}
 }
 

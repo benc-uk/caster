@@ -9,16 +9,13 @@ import (
 	"strings"
 )
 
-const doorWallIndex = 20
-const doorRuneWallIndex = 21
-
 // ===========================================================
 // Map parser and loader
 // ===========================================================
 func (g *Game) loadMap(name string) {
-	g.mapdata = make([][]int, mapSize)
+	g.mapdata = make([][]*Wall, mapSize)
 	for i := range g.mapdata {
-		g.mapdata[i] = make([]int, mapSize)
+		g.mapdata[i] = make([]*Wall, mapSize)
 	}
 
 	filename := "./maps/" + name + ".map"
@@ -63,9 +60,9 @@ func (g *Game) loadMap(name string) {
 		for x, char := range line {
 			if isNumeric(string(char)) {
 				// Walls are numbered from 1 to 9
-				g.mapdata[x][y] = int(char - '0')
+				g.mapdata[x][y] = newWall(x, y, string(char))
 			} else {
-				g.mapdata[x][y] = 0
+				g.mapdata[x][y] = nil
 
 				// Player
 				if char == '*' {
@@ -74,11 +71,7 @@ func (g *Game) loadMap(name string) {
 
 				// Doors are a special case, and start at 20
 				if char == '#' {
-					g.mapdata[x][y] = doorWallIndex
-				}
-
-				if char == '%' {
-					g.mapdata[x][y] = doorRuneWallIndex
+					g.mapdata[x][y] = newDoor(x, y, "basic")
 				}
 
 				if monsterRe.MatchString(string(char)) {

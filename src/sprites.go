@@ -107,7 +107,6 @@ func (s *Sprite) draw(screen *ebiten.Image, g *Game) {
 	}
 
 	winWidthF := float64(winWidth)
-	winHeightHalfF := float64(winHeightHalf)
 	// The X coordinate of the sprite
 	hOffset := (spriteDir-g.player.angle)/g.player.fov*(winWidthF) + (winWidthF / 2) - (spriteImgSizeH * spriteScale)
 
@@ -118,8 +117,8 @@ func (s *Sprite) draw(screen *ebiten.Image, g *Game) {
 	}
 
 	// The Y coordinate of the sprite
-	// HACK: HERE BE EVIL! 😈 This only works when the screen height is 1024, I've lost DAYS trying to fix it
-	vOffset := winHeightHalfF - spriteImgSize*magicWall*spriteDist*magicSprite
+	// HACK: HERE BE EVIL!
+	vOffset := float64(winHeightHalf) - spriteImgSize*magicWall*spriteDist*magicSprite
 
 	// To position the sprite
 	spriteOp := &ebiten.DrawImageOptions{}

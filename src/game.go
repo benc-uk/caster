@@ -15,7 +15,7 @@ import (
 
 // Holds most core game data
 type Game struct {
-	mapdata     [][]int                // Map data is stored in a 2D array, 0 = empty, 1+ = wall
+	mapdata     [][]*Wall              // Map data is stored in a 2D array, 0 = empty, 1+ = wall
 	player      Player                 // Player object
 	sprites     []*Sprite              // All sprites on the map, used for depth sorting
 	monsters    map[uint64]*Monster    // Monsters on the map
@@ -150,8 +150,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			cy := g.player.y + (t * math.Sin(rayAngle))
 
 			// Detect collision with walls
-			wallIndex, _, _ := g.getWallAt(cx, cy)
-			if wallIndex == 0 {
+			wall := g.getWallAt(cx, cy)
+			if wall == nil {
 				continue
 			}
 
@@ -166,7 +166,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 
 			// Get wall texture column at the hit point
-			textureColStrip := imageCache[fmt.Sprintf("walls/%d", wallIndex)].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+			// textureColStrip := imageCache[fmt.Sprintf("walls/%d", wallIndex)].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+			textureColStrip := wall.image.SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
 
 			// decoStrip := spriteImages["torch_1"].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
 			// if g.ticks%20 < 10 {
@@ -238,15 +239,15 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 // ===========================================================
 // Collision detection with map cells
 // ===========================================================
-func (g *Game) getWallAt(x, y float64) (int, int, int) {
+func (g *Game) getWallAt(x, y float64) *Wall {
 	// NOTE: Bounds checking is not done, the map must have an outer wall
 	mapCellX := int(x / cellSize)
 	mapCellY := int(y / cellSize)
 	if mapCellX < 0 || mapCellY < 0 || mapCellX >= mapSize || mapCellY >= mapSize {
-		return 0, 0, 0
+		return nil
 	}
 
-	return g.mapdata[mapCellX][mapCellY], mapCellX, mapCellY
+	return g.mapdata[mapCellX][mapCellY]
 }
 
 func (g *Game) returnToTitleScreen() {

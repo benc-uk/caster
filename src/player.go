@@ -48,7 +48,7 @@ func newPlayer(cellX, cellY int) Player {
 
 		moveFunc: func(t int64) float64 {
 			min := float64(cellSize) / 50.0
-			max := float64(cellSize) / 16.0
+			max := float64(cellSize) / 14.0
 			return math.Min(min+math.Pow(float64(t)/250000, 2), max)
 		},
 
@@ -116,17 +116,16 @@ func (p *Player) moveToCell(cellX, cellY int) {
 }
 
 func (p *Player) checkWallCollision(x, y float64) *Wall {
-	size := p.size
-	if wall := game.getWallAt(x+size, y); wall != nil {
+	if wall := game.getWallAt(x+p.size, y); wall != nil {
 		return wall
 	}
-	if wall := game.getWallAt(x-size, y); wall != nil {
+	if wall := game.getWallAt(x-p.size, y); wall != nil {
 		return wall
 	}
-	if wall := game.getWallAt(x, y+size); wall != nil {
+	if wall := game.getWallAt(x, y+p.size); wall != nil {
 		return wall
 	}
-	if wall := game.getWallAt(x, y-size); wall != nil {
+	if wall := game.getWallAt(x, y-p.size); wall != nil {
 		return wall
 	}
 	return nil

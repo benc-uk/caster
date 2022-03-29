@@ -7,38 +7,113 @@
     <title>Map Editor</title>
     <script src="./app.js"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
+      integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH"
+      crossorigin="anonymous"
+    />
     <link rel="stylesheet" href="app.css" />
   </head>
   <body
     x-data="data"
     x-init="initApp"
     @contextmenu.prevent=""
-    @keydown="mode = $event.key"
+    @keydown="setMode($event)"
     @keyup="mode = null"
   >
-    <h1>MODE: <span x-text="mode"></span></h1>
-    <div class="map">
-      <template x-for="(row, y) in map">
-        <div class="mapRow">
-          <template x-for="(cell, x) in row">
-            <div
-              class="cell"
-              @click="cellClick(x, y, $event)"
-              @mousemove="cellClick(x, y, $event)"
-              @contextmenu="cellClear(x, y)"
-              :class="getCell(x,y).wall>0 ? 'wall' : ''"
-              :style="{ 'background-image': getImageForCell(x,y) }"
-            >
+    <div class="toolbar">
+      <a class="pure-button" href="#">Open</a>
+      <a class="pure-button" href="#" @click="save()">Save</a>
+      <span x-text="tooltip"></span>
+      <h4>Edit mode: <span x-text="mode || 'walls'"></span></h4>
+    </div>
+
+    <div class="main">
+      <div class="map">
+        <template x-for="(row, y) in map">
+          <div class="mapRow">
+            <template x-for="(cell, x) in row">
               <div
-                class="cellExtra"
-                :style="{ 'background-image': getOverlayForCell(x,y) }"
+                class="cell"
+                @click="cellClick(x, y, $event)"
+                @mousemove="cellClick(x, y, $event)"
+                @contextmenu="cellClear(x, y)"
+                :class="getCell(x,y).wall>0 ? 'wall' : ''"
+                :style="{ 'background-image': getImageForCell(x,y) }"
               >
-                &nbsp;
+                <div
+                  class="cellExtra"
+                  :style="{ 'background-image': getOverlayForCell(x,y) }"
+                >
+                  &nbsp;
+                </div>
               </div>
-            </div>
+            </template>
+          </div>
+        </template>
+      </div>
+      <div>
+        <h2>Walls</h2>
+        <div class="picker">
+          <template x-for="(wall, index) of pickerWall">
+            <img
+              :src="`gfx/walls/${wall}.png`"
+              :class="index == selectedWall && 'selected'"
+              @click="selectedWall = index"
+            />
+            <div x-text="index"></div>
           </template>
         </div>
-      </template>
+
+        <h2>Items</h2>
+        <div class="picker">
+          <template x-for="(item, index) of pickerItem">
+            <img
+              :src="`gfx/items/${item}.png`"
+              :class="index == selectedItem && 'selected'"
+              @click="selectedItem = index"
+            />
+            <div x-text="index"></div>
+          </template>
+        </div>
+
+        <h2>Monsters</h2>
+        <div class="picker">
+          <template x-for="(mon, index) of pickerMonster">
+            <img
+              :src="`gfx/monsters/${mon}.png`"
+              :class="index == selectedMonster && 'selected'"
+              @click="selectedMonster = index"
+            />
+            <div x-text="index"></div>
+          </template>
+        </div>
+
+        <h2>Usable / Doors</h2>
+        <div class="picker">
+          <template x-for="(use, index) of pickerUsable">
+            <img
+              :src="`gfx/usables/${use}.png`"
+              :class="index == selectedUsable && 'selected'"
+              @click="selectedUsable = index"
+            />
+            <div x-text="index"></div>
+          </template>
+        </div>
+
+        <h2>Decorations</h2>
+        <div class="picker">
+          <template x-for="(deco, index) of pickerDeco">
+            <img
+              :src="`gfx/decoration/${deco}.png`"
+              :class="index == selectedDeco && 'selected'"
+              @click="selectedDeco = index"
+            />
+            <div x-text="index"></div>
+          </template>
+        </div>
+      </div>
     </div>
   </body>
 </html>

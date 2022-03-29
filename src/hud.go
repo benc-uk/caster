@@ -45,7 +45,7 @@ func renderTitle(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(x), float64(y))
-			screen.DrawImage(imageCache[fmt.Sprintf("walls/%s", (x+y)%9+1)], op)
+			screen.DrawImage(imageCache[fmt.Sprintf("walls/%d", (x+y)%9+1)], op)
 		}
 	}
 

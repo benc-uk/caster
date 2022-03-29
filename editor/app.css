@@ -2,28 +2,65 @@
   width: 800px;
   height: 800px;
   overflow: scroll;
+  margin-right: 20px;
 }
 
 .mapRow {
   display: flex;
   flex-direction: row;
-  height: 32px;
+  height: 48px;
 }
 
 .cell {
   flex-shrink: 0;
   border-right: 1px solid #222;
   border-bottom: 1px solid #222;
-  width: 32px;
+  width: 48px;
   background-color: #ddd;
 
   -webkit-user-select: none;
   -webkit-user-drag: none;
   -webkit-app-region: no-drag;
+  background-size: contain;
 }
 
 .cellExtra {
-  width: 100%;
-  height: 100%;
+  width: 8px;
+  height: 8px;
   border: 0;
+}
+
+.main {
+  display: flex;
+  flex-direction: row;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: row;
+}
+
+.toolbar > .pure-button {
+  margin: 6px;
+}
+
+.picker {
+  display: flex;
+  width: 800px;
+  overflow-x: scroll;
+  background-color: #222;
+}
+
+.picker img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  margin: 8px;
+  border: 3px solid rgba(255, 0, 0, 0);
+}
+
+.selected {
+  border: 3px solid red !important;
+  border-radius: 8px;
+  background-color: rgba(255, 0, 0, 0.2);
 }

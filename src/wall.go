@@ -26,7 +26,7 @@ func newDoor(x, y int, kind string) *Wall {
 	return &Wall{
 		x:     x,
 		y:     y,
-		image: imageCache["usables/"+kind],
+		image: imageCache["doors/"+kind],
 		actionFunc: func(g *Game) {
 			game.mapdata[x][y] = nil
 			playSound("door_open", 0.4, false)

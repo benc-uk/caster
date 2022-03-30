@@ -3,6 +3,7 @@
   height: 800px;
   overflow: scroll;
   margin-right: 20px;
+  flex-shrink: 0;
 }
 
 .mapRow {
@@ -35,9 +36,22 @@
   flex-direction: row;
 }
 
+.pallette {
+  flex-shrink: 1;
+}
+
+.pallette h2 {
+  padding: 5px;
+  margin: 0;
+  background-color: rgb(209, 209, 209);
+}
+
 .toolbar {
   display: flex;
   flex-direction: row;
+  background-color: #222;
+  color: #eee;
+  align-items: center;
 }
 
 .toolbar > .pure-button {
@@ -45,10 +59,11 @@
 }
 
 .picker {
+  width: 440px;
   display: flex;
-  width: 800px;
   overflow-x: scroll;
   background-color: #222;
+  margin-bottom: 20px;
 }
 
 .picker img {
@@ -63,4 +78,29 @@
   border: 3px solid red !important;
   border-radius: 8px;
   background-color: rgba(255, 0, 0, 0.2);
+}
+
+.loadingWrapper {
+  text-align: center;
+}
+#loading {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  border: 8px solid rgba(136, 174, 231, 0.3);
+  border-radius: 50%;
+  border-top-color: rgb(33, 84, 160);
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+@-webkit-keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+  }
 }

@@ -1,0 +1,2 @@
+pushd ./gfx/walls || exit; for f in *.png; do; printf '%s\n' "\"${f%.png}\","; done > ../../wall-index.js; popd || exit
+pushd ./gfx/monsters || exit; for f in *.png; do; printf '%s\n' "\"${f%.png}\","; done > ../../monster-index.js; popd || exit

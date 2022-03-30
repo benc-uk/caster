@@ -3,6 +3,7 @@ module github.com/benc-uk/caster
 go 1.17
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/hajimehoshi/ebiten/v2 v2.2.5
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
 )

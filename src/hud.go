@@ -40,14 +40,14 @@ func initHUD() {
 
 func renderTitle(screen *ebiten.Image) {
 
-	for x := 0; x < winWidth; x += cellSize * 2 {
-		for y := 0; y < winHeight; y += cellSize * 2 {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(x), float64(y))
-			screen.DrawImage(imageCache[fmt.Sprintf("walls/%d", (x+y)%9+1)], op)
-		}
-	}
+	// for x := 0; x < winWidth; x += cellSize * 2 {
+	// 	for y := 0; y < winHeight; y += cellSize * 2 {
+	// 		op := &ebiten.DrawImageOptions{}
+	// 		op.GeoM.Scale(2, 2)
+	// 		op.GeoM.Translate(float64(x), float64(y))
+	// 		screen.DrawImage(imageCache[fmt.Sprintf("walls/%d", (x+y)%9+1)], op)
+	// 	}
+	// }
 
 	ebitenutil.DrawRect(screen, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 160})
 

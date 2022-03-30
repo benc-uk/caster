@@ -115,6 +115,11 @@ func (p *Player) moveToCell(cellX, cellY int) {
 	p.y = cellSize*float64(cellY) + cellSize/2
 }
 
+func (p *Player) setFacing(facing int) {
+	// facing: 0 = up, 1 = right, 2 = down, 3 = left
+	p.angle = math.Pi / 2 * float64(facing-1)
+}
+
 func (p *Player) checkWallCollision(x, y float64) *Wall {
 	if wall := game.getWallAt(x+p.size, y); wall != nil {
 		return wall

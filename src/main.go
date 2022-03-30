@@ -58,12 +58,12 @@ func init() {
 	loadImages()
 
 	// Find all maps in the maps folder
-	maps, err := filepath.Glob("maps/*.map")
+	maps, err := filepath.Glob("maps/*.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, mapFile := range maps {
-		titleLevels = append(titleLevels, strings.TrimSuffix(filepath.Base(mapFile), ".map"))
+		titleLevels = append(titleLevels, strings.TrimSuffix(filepath.Base(mapFile), ".json"))
 	}
 
 	initSound()
@@ -153,7 +153,7 @@ func main() {
 	}
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	//startGame()
+	startGame()
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

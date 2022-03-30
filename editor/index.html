@@ -4,116 +4,88 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Map Editor</title>
+    <title>Crypt Caster: Map Editor</title>
+    <script src="./wall-index.js"></script>
     <script src="./app.js"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
-      integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH"
-      crossorigin="anonymous"
-    />
-    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.1.0/build/pure-min.css" />
+    <link rel="shortcut icon" href="https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/microsoft/310/memo_1f4dd.png" type="image/png" />
+    <link rel="stylesheet" href="css/padding.css" />
+    <link rel="stylesheet" href="css/app.css" />
   </head>
-  <body
-    x-data="data"
-    x-init="initApp"
-    @contextmenu.prevent=""
-    @keydown="setMode($event)"
-    @keyup="mode = null"
-  >
+  <body x-data="data" x-init="initApp" @contextmenu.prevent="" @keydown="setMode($event)" @keyup="mode = null">
     <div class="toolbar">
-      <a class="pure-button" href="#">Open</a>
-      <a class="pure-button" href="#" @click="save()">Save</a>
-      <span x-text="tooltip"></span>
-      <h4>Edit mode: <span x-text="mode || 'walls'"></span></h4>
+      <a class="pure-button" @click="confirm('Are you sure?') && initApp()" :disabled="loadingSaving">New</a>
+      <a class="pure-button" @click="await openFile()" :disabled="loadingSaving">Open</a>
+      <a class="pure-button" @click="await saveFile()" :disabled="loadingSaving">Save</a>
+      <div x-html="`<b>Active file:</b> ${fileName || 'none'}`"></div>
+      <div class="ml-50" x-html="`<b>Edit mode:</b> ${mode || 'walls'}`"></div>
+      <div class="ml-50" x-html="`<b>Cell:</b> ${cellTip}`"></div>
     </div>
 
-    <div class="main">
-      <div class="map">
-        <template x-for="(row, y) in map">
-          <div class="mapRow">
-            <template x-for="(cell, x) in row">
-              <div
-                class="cell"
-                @click="cellClick(x, y, $event)"
-                @mousemove="cellClick(x, y, $event)"
-                @contextmenu="cellClear(x, y)"
-                :class="getCell(x,y).wall>0 ? 'wall' : ''"
-                :style="{ 'background-image': getImageForCell(x,y) }"
-              >
-                <div
-                  class="cellExtra"
-                  :style="{ 'background-image': getOverlayForCell(x,y) }"
-                >
-                  &nbsp;
+    <template x-if="!loadingSaving">
+      <div class="main">
+        <div class="map">
+          <template x-for="(row, y) in map">
+            <div class="mapRow">
+              <template x-for="(cell, x) in row">
+                <div class="cell" @click="cellClick(x, y, $event)" @mousemove="cellClick(x, y, $event)" @contextmenu="cellClear(x, y)" :style="{ 'background-image': getImageForCell(x,y) }">
+                  <div class="cellExtra" :style="{ 'background-image': getOverlayForCell(x,y) }">&nbsp;</div>
                 </div>
-              </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <div class="pallette">
+          <h2>Walls</h2>
+          <div class="picker">
+            <template x-for="(wall, index) of pickerWall">
+              <img :src="`gfx/walls/${wall}.png`" :class="index == selectedWall && 'selected'" @click="selectedWall = index" />
+              <div x-text="index"></div>
             </template>
           </div>
-        </template>
-      </div>
-      <div>
-        <h2>Walls</h2>
-        <div class="picker">
-          <template x-for="(wall, index) of pickerWall">
-            <img
-              :src="`gfx/walls/${wall}.png`"
-              :class="index == selectedWall && 'selected'"
-              @click="selectedWall = index"
-            />
-            <div x-text="index"></div>
-          </template>
-        </div>
 
-        <h2>Items</h2>
-        <div class="picker">
-          <template x-for="(item, index) of pickerItem">
-            <img
-              :src="`gfx/items/${item}.png`"
-              :class="index == selectedItem && 'selected'"
-              @click="selectedItem = index"
-            />
-            <div x-text="index"></div>
-          </template>
-        </div>
+          <h2>Items</h2>
+          <div class="picker">
+            <template x-for="(item, index) of pickerItem">
+              <img :src="`gfx/items/${item}.png`" :class="index == selectedItem && 'selected'" @click="selectedItem = index" />
+              <div x-text="index"></div>
+            </template>
+          </div>
 
-        <h2>Monsters</h2>
-        <div class="picker">
-          <template x-for="(mon, index) of pickerMonster">
-            <img
-              :src="`gfx/monsters/${mon}.png`"
-              :class="index == selectedMonster && 'selected'"
-              @click="selectedMonster = index"
-            />
-            <div x-text="index"></div>
-          </template>
-        </div>
+          <h2>Monsters</h2>
+          <div class="picker">
+            <template x-for="(mon, index) of pickerMonster">
+              <img :src="`gfx/monsters/${mon}.png`" :class="index == selectedMonster && 'selected'" @click="selectedMonster = index" />
+              <div x-text="index"></div>
+            </template>
+          </div>
 
-        <h2>Usable / Doors</h2>
-        <div class="picker">
-          <template x-for="(use, index) of pickerUsable">
-            <img
-              :src="`gfx/usables/${use}.png`"
-              :class="index == selectedUsable && 'selected'"
-              @click="selectedUsable = index"
-            />
-            <div x-text="index"></div>
-          </template>
-        </div>
+          <h2>Doors</h2>
+          <div class="picker">
+            <template x-for="(d, index) of pickerDoor">
+              <img :src="`gfx/doors/${d}.png`" :class="index == selectedDoor && 'selected'" @click="selectedDoor = index" />
+              <div x-text="index"></div>
+            </template>
+          </div>
 
-        <h2>Decorations</h2>
-        <div class="picker">
-          <template x-for="(deco, index) of pickerDeco">
-            <img
-              :src="`gfx/decoration/${deco}.png`"
-              :class="index == selectedDeco && 'selected'"
-              @click="selectedDeco = index"
-            />
-            <div x-text="index"></div>
-          </template>
+          <h2>Decorations</h2>
+          <div class="picker">
+            <template x-for="(deco, index) of pickerDeco">
+              <img :src="`gfx/decoration/${deco}.png`" :class="index == selectedDeco && 'selected'" @click="selectedDeco = index" />
+              <div x-text="index"></div>
+            </template>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <template x-if="loadingSaving">
+      <div class="loadingWrapper">
+        <h2>Please wait...</h2>
+        <div id="loading"></div>
+      </div>
+    </template>
   </body>
 </html>

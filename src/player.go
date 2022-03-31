@@ -47,10 +47,10 @@ func newPlayer(cellX, cellY int) Player {
 		mana:             100,
 		cellX:            cellX,
 		cellY:            cellY,
-		holding: map[string]int{
-			"key_red":   2,
-			"key_blue":  1,
-			"key_green": 8,
+		holding:          map[string]int{
+			// "key_red":   2,
+			// "key_blue":  1,
+			// "key_green": 8,
 		},
 
 		moveFunc: func(t int64) float64 {
@@ -176,5 +176,8 @@ func (p *Player) attack() {
 	if p.mana < 0 {
 		p.mana = 0.0
 	}
-	game.addProjectile("magic_1", p.x, p.y, p.angle, (float64(cellSize) / 9.0), 40)
+
+	sx := p.x + ((cellSize / 3) * math.Cos(p.angle))
+	sy := p.y + ((cellSize / 3) * math.Sin(p.angle))
+	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 9.0), 40)
 }

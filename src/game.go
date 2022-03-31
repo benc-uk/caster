@@ -2,12 +2,14 @@ package main
 
 import (
 	"image"
+	"image/color"
 	"math"
 	"os"
 	"sort"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
@@ -229,6 +231,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// ebitenutil.DebugPrint(screen, msg)
 
 	renderHud(screen, g)
+
+	ebitenutil.DrawLine(screen, float64(winWidth)/2, float64(winHeightHalf-7), float64(winWidth)/2, float64(winHeightHalf), color.RGBA{0, 255, 0, 255})
 
 	if g.paused {
 		renderPauseScreen(screen)

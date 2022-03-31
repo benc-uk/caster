@@ -145,6 +145,11 @@ func renderHud(screen *ebiten.Image, g *Game) {
 			}
 		}
 
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(3*magicSprite, 3*magicSprite)
+		op.GeoM.Translate((float64(winWidth)/2.0)-(48*magicSprite), float64(winHeight)-(96*magicSprite))
+		hudImage.DrawImage(imageCache["hud/weapon_1"], op)
+
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
 	} else {
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})

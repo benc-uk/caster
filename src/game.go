@@ -166,19 +166,25 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 
 			// Get wall texture column at the hit point
-			// textureColStrip := imageCache[fmt.Sprintf("walls/%d", wallIndex)].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
 			textureColStrip := wall.image.SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
 
-			// decoStrip := spriteImages["torch_1"].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
-			// if g.ticks%20 < 10 {
-			// 	decoStrip = spriteImages["torch_2"].SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
-			// }
-			op := &ebiten.DrawImageOptions{}
+			// Handle decorations
+			var decoStrip *ebiten.Image
+			if wall.decoration != nil {
+				if wall != nil && g.ticks%20 < 10 && len(wall.metadata) > 1 && wall.metadata[1] == "torch" {
+					wall.decoration = imageCache["decoration/torch-1"]
+				} else if wall != nil && len(wall.metadata) > 1 && wall.metadata[1] == "torch" {
+					wall.decoration = imageCache["decoration/torch"]
+				}
+				decoStrip = wall.decoration.SubImage(image.Rect(texColumn, 0, texColumn+1, textureSize)).(*ebiten.Image)
+			}
 
 			// Scale the height of rendered wall strip to the distance and correct fish-eye effect
 			// This is the heart of the 3D effect in the game
 			colHeight := (float64(winHeight) / t) * magicWall / (math.Cos(rayAngle - g.player.angle))
+
 			// Scale and place the strip
+			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(viewRaysRatio, colHeight/textureSize)
 			op.GeoM.Translate(float64(i)*float64(viewRaysRatio), float64(winHeightHalf)-colHeight/2)
 
@@ -189,6 +195,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			// Draw the strip
 			op.ColorM.Scale(distScale, distScale, distScale, 1)
 			screen.DrawImage(textureColStrip, op)
+			if decoStrip != nil {
+				screen.DrawImage(decoStrip, op)
+			}
 
 			// Save depth in buffer
 			depthBuffer[i] = t

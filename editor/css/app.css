@@ -26,9 +26,11 @@
 }
 
 .cellExtra {
-  width: 8px;
-  height: 8px;
+  width: 48px;
+  height: 48px;
   border: 0;
+  background-size: contain;
+  z-index: 10;
 }
 
 .main {
@@ -83,6 +85,7 @@
 .loadingWrapper {
   text-align: center;
 }
+
 #loading {
   display: inline-block;
   width: 80px;
@@ -99,6 +102,7 @@
     -webkit-transform: rotate(360deg);
   }
 }
+
 @-webkit-keyframes spin {
   to {
     -webkit-transform: rotate(360deg);

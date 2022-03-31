@@ -10,9 +10,9 @@ import (
 type MapFileCell struct {
 	X     int
 	Y     int
-	Type  string `json:"t"`
-	Value string `json:"v"`
-	Extra int    `json:"e"`
+	Type  string   `json:"t"`
+	Value string   `json:"v"`
+	Extra []string `json:"e"`
 }
 
 // ===========================================================
@@ -44,6 +44,20 @@ func (g *Game) loadMap(name string) {
 			g.mapdata[cell.X][cell.Y] = nil
 			if cell.Type == "w" {
 				g.mapdata[cell.X][cell.Y] = newWall(cell.X, cell.Y, cell.Value)
+				if len(cell.Extra) > 0 {
+					g.mapdata[cell.X][cell.Y].metadata = cell.Extra
+					if cell.Extra[0] == "deco" {
+						g.mapdata[cell.X][cell.Y].decoration = imageCache["decoration/"+cell.Extra[1]]
+					}
+					if cell.Extra[0] == "secret" {
+						g.mapdata[cell.X][cell.Y] = newSecretWall(cell.X, cell.Y, cell.Value)
+					}
+					if cell.Extra[0] == "switch" {
+						targetX, _ := strconv.Atoi(cell.Extra[1])
+						targetY, _ := strconv.Atoi(cell.Extra[2])
+						g.mapdata[cell.X][cell.Y] = newSwitchWall(cell.X, cell.Y, cell.Value, targetX, targetY)
+					}
+				}
 			}
 
 			if cell.Type == "d" {

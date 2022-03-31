@@ -6,7 +6,7 @@ const data = {
   pickerMonster: ["ghoul", "skeleton", "thing"],
   pickerWall: wallIndex,
   pickerItem: ["potion"],
-  pickerDoor: ["basic", "blue_key"],
+  pickerDoor: ["basic", "blue_key", "red_key", "green_key", "switch"],
   pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret"],
   selectedMonster: 0,
   selectedWall: 0,
@@ -53,6 +53,22 @@ const data = {
         if (this.map[x][y].t == "w" || this.map[x][y].t == "p") return
         this.map[x][y].v = this.pickerDoor[this.selectedDoor]
         this.map[x][y].t = "d"
+        return
+      }
+      if (this.mode == "extra") {
+        if (this.map[x][y].t != "w") return
+        if (this.pickerDeco[this.selectedDeco] == "secret") {
+          this.map[x][y].e = ["secret"]
+          return
+        }
+        if (this.pickerDeco[this.selectedDeco] == "switch") {
+          const target = prompt("Enter the switch's target cell:", "x,y")
+          if (!target) return
+          const targetParts = target.split(",")
+          this.map[x][y].e = ["switch", targetParts[0], targetParts[1]]
+          return
+        }
+        this.map[x][y].e = ["deco", this.pickerDeco[this.selectedDeco]]
         return
       }
       if (this.mode == "player") {
@@ -107,15 +123,6 @@ const data = {
     if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
     const cell = this.map[x][y]
     if (!cell || cell === undefined) return "none"
-    // if (cell.w) {
-    //   return `url(/gfx/walls/${cell.w}.png)`
-    // } else if (cell.m) {
-    //   return `url(/gfx/monsters/${cell.m}.png)`
-    // } else if (cell.i) {
-    //   return `url(/gfx/items/${cell.i}.png)`
-    // } else if (cell.p) {
-    //   return `url(/gfx/player.png)`
-    // }
     if (cell.t == "p") return `url(/gfx/player${cell.v}.png)`
     if (cell.t == "i") return `url(/gfx/items/${cell.v}.png)`
     if (cell.t == "m") return `url(/gfx/monsters/${cell.v}.png)`
@@ -125,13 +132,20 @@ const data = {
   },
 
   getOverlayForCell(x, y) {
-    return "none"
-    // if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
-    // const cell = this.map[x][y]
-    // if (!cell || cell === undefined) return "none"
-    // if (cell.extra) {
-    //   return "url(/gfx/items/ball.png)"
-    // }
+    if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
+    const cell = this.map[x][y]
+    if (!cell || cell === undefined) return "none"
+    if (cell.e.length > 0) {
+      if (cell.e[0] == "deco") {
+        return `url(/gfx/decoration/${cell.e[1]}.png)`
+      }
+      if (cell.e[0] == "secret") {
+        return `url(/gfx/decoration/secret.png)`
+      }
+      if (cell.e[0] == "switch") {
+        return `url(/gfx/decoration/switch.png)`
+      }
+    }
   },
 
   setMode(evt) {
@@ -146,7 +160,7 @@ const data = {
         this.mode = "door"
         break
       case "x":
-        this.mode = "decoration"
+        this.mode = "extra"
         break
       case "p":
         this.mode = "player"
@@ -167,6 +181,8 @@ const data = {
 
     try {
       const writable = await this.fileHandle.createWritable()
+      // remove nulls from map
+
       await writable.write(JSON.stringify(this.map))
       await writable.close()
     } catch (e) {
@@ -214,7 +230,7 @@ function newEmptyCell(x, y) {
     y: y,
     t: null,
     v: null,
-    e: null,
+    e: [],
   }
 }
 

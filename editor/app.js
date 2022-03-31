@@ -4,9 +4,55 @@ const data = {
   map: null,
   mode: null,
   pickerMonster: ["ghoul", "skeleton", "thing"],
-  pickerWall: wallIndex,
-  pickerItem: ["potion"],
-  pickerDoor: ["basic", "blue_key", "red_key", "green_key", "switch"],
+  pickerWall: [
+    "brick_brown-vines_1",
+    "brick_brown-vines_3",
+    "brick_brown_0",
+    "brick_brown_2",
+    "brick_brown_7",
+    "brick_dark_0",
+    "brick_dark_2",
+    "brick_dark_4",
+    "brick_gray_1",
+    "catacombs_0",
+    "catacombs_15",
+    "catacombs_2",
+    "catacombs_4",
+    "church_2",
+    "cobalt_stone_9",
+    "crystal_wall_0",
+    "crystal_wall_1",
+    "crystal_wall_2",
+    "crystal_wall_6",
+    "crystal_wall_7",
+    "hell_1",
+    "hell_7",
+    "hell_8",
+    "hive_0",
+    "hive_2",
+    "lab-metal_0",
+    "lab-metal_1",
+    "lab-metal_3",
+    "lab-metal_5",
+    "lab-rock_0",
+    "lab-rock_1",
+    "lab-stone_0",
+    "lab-stone_1",
+    "lab-stone_5",
+    "lair_1_old",
+    "marble_wall_11",
+    "marble_wall_2",
+    "marble_wall_5",
+    "marble_wall_9",
+    "orc_4",
+    "orc_6",
+    "orc_7",
+    "pebble_red_3_new",
+    "undead_brown_0",
+    "undead_brown_3",
+  ],
+  pickerItem: ["potion", "key_green", "key_red", "key_blue", "chunk", "apple", "ball"],
+  pickerDoor: ["basic", "key_blue", "key_red", "key_green", "switch"],
   pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret"],
   selectedMonster: 0,
   selectedWall: 0,
@@ -36,6 +82,7 @@ const data = {
   },
 
   cellClick(x, y, evt) {
+    // Single click events
     if (evt.type === "click") {
       if (this.mode == "monster") {
         if (this.map[x][y].t == "w" || this.map[x][y].t == "p") return
@@ -43,36 +90,47 @@ const data = {
         this.map[x][y].t = "m"
         return
       }
+
       if (this.mode == "item") {
         if (this.map[x][y].t == "w" || this.map[x][y].t == "p") return
         this.map[x][y].v = this.pickerItem[this.selectedItem]
         this.map[x][y].t = "i"
         return
       }
+
       if (this.mode == "door") {
         if (this.map[x][y].t == "w" || this.map[x][y].t == "p") return
         this.map[x][y].v = this.pickerDoor[this.selectedDoor]
         this.map[x][y].t = "d"
         return
       }
+
       if (this.mode == "extra") {
+        // Can only add extras to walls
         if (this.map[x][y].t != "w") return
+
+        // Secret walls are special
         if (this.pickerDeco[this.selectedDeco] == "secret") {
           this.map[x][y].e = ["secret"]
           return
         }
+
+        // Adds a switch
         if (this.pickerDeco[this.selectedDeco] == "switch") {
-          const target = prompt("Enter the switch's target cell:", "x,y")
+          const target = prompt("Enter the target cell for this switch:", "x,y")
           if (!target) return
           const targetParts = target.split(",")
           this.map[x][y].e = ["switch", targetParts[0], targetParts[1]]
           return
         }
+
         this.map[x][y].e = ["deco", this.pickerDeco[this.selectedDeco]]
         return
       }
       if (this.mode == "player") {
         if (this.map[x][y].t == "w") return
+
+        // If player here rotate them
         if (this.map[x][y].t == "p") {
           let facing = parseInt(this.map[x][y].v) + 1
           if (facing > 3) facing = 0
@@ -90,6 +148,7 @@ const data = {
       this.cellWall(x, y)
     }
 
+    // Triggered by mousemove to drag & paint walls
     if (evt.buttons === 1) {
       if (this.mode) return
       this.cellWall(x, y)
@@ -123,7 +182,7 @@ const data = {
     if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
     const cell = this.map[x][y]
     if (!cell || cell === undefined) return "none"
-    if (cell.t == "p") return `url(/gfx/player${cell.v}.png)`
+    if (cell.t == "p") return `url(/extra-gfx/player${cell.v}.png)`
     if (cell.t == "i") return `url(/gfx/items/${cell.v}.png)`
     if (cell.t == "m") return `url(/gfx/monsters/${cell.v}.png)`
     if (cell.t == "w") return `url(/gfx/walls/${cell.v}.png)`

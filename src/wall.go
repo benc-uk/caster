@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"strings"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -14,6 +17,10 @@ type Wall struct {
 }
 
 func newWall(x, y int, kind string) *Wall {
+	if _, ok := imageCache["walls/"+kind]; !ok {
+		log.Fatalf("ERROR! Wall image not found: %s", kind)
+	}
+
 	return &Wall{
 		x:          x,
 		y:          y,
@@ -26,23 +33,39 @@ func newWall(x, y int, kind string) *Wall {
 }
 
 func newDoor(x, y int, kind string) *Wall {
-	w := &Wall{
+	door := &Wall{
 		x:     x,
 		y:     y,
 		image: imageCache["doors/"+kind],
+
+		// Default is a locked door
 		actionFunc: func(g *Game) {
 			playSound("locked", 1.0, false)
 		},
 	}
 
+	// Basic doors can just be opened
 	if kind == "basic" {
-		w.actionFunc = func(g *Game) {
+		door.actionFunc = func(g *Game) {
 			game.mapdata[x][y] = nil
 			playSound("door_open", 0.4, false)
 		}
 	}
 
-	return w
+	if strings.HasPrefix(kind, "key") {
+		door.actionFunc = func(g *Game) {
+			count, holding := g.player.holding[kind]
+			if holding && count > 0 {
+				game.mapdata[x][y] = nil
+				playSound("door_open", 0.4, false)
+				g.player.holding[kind]--
+			} else {
+				playSound("locked", 1.0, false)
+			}
+		}
+	}
+
+	return door
 }
 
 func newSecretWall(x, y int, kind string) *Wall {
@@ -50,6 +73,8 @@ func newSecretWall(x, y int, kind string) *Wall {
 		x:     x,
 		y:     y,
 		image: imageCache["walls/"+kind],
+
+		// Remove this wall
 		actionFunc: func(g *Game) {
 			game.mapdata[x][y] = nil
 			playSound("secret", 1.0, false)
@@ -63,6 +88,8 @@ func newSwitchWall(x, y int, kind string, tx, ty int) *Wall {
 		y:          y,
 		image:      imageCache["walls/"+kind],
 		decoration: imageCache["decoration/switch"],
+
+		// Remove a wall somewhere else
 		actionFunc: func(g *Game) {
 			game.mapdata[tx][ty] = nil
 			playSound("switch", 1.0, false)

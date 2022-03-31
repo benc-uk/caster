@@ -29,6 +29,8 @@ type Player struct {
 	moveFunc      func(int64) float64
 	turnStartTime int64
 	turnFunc      func(int64) float64
+
+	holding map[string]int
 }
 
 func newPlayer(cellX, cellY int) Player {
@@ -45,6 +47,11 @@ func newPlayer(cellX, cellY int) Player {
 		mana:             100,
 		cellX:            cellX,
 		cellY:            cellY,
+		holding: map[string]int{
+			"key_red":   2,
+			"key_blue":  1,
+			"key_green": 8,
+		},
 
 		moveFunc: func(t int64) float64 {
 			min := float64(cellSize) / 50.0

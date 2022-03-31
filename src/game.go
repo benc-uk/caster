@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"math"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
@@ -125,7 +123,6 @@ func (g *Game) Update() error {
 // Main draw function
 // ===========================================================
 func (g *Game) Draw(screen *ebiten.Image) {
-
 	if titleScreen {
 		renderTitle(screen)
 		return
@@ -228,8 +225,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	g.overlay(screen)
 
-	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.mapName, Version)
-	ebitenutil.DebugPrint(screen, msg)
+	// msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.holding, g.mapName, Version)
+	// ebitenutil.DebugPrint(screen, msg)
 
 	renderHud(screen, g)
 

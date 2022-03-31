@@ -28,17 +28,24 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 
 	if kind == "potion" {
 		item.pickUpFunc = func(p *Player) {
-			p.mana += 30
+			p.mana += 25
 			playSound("zip_up", 1, false)
 		}
 	}
 
 	if kind == "ball" {
 		item.pickUpFunc = func(p *Player) {
-			p.mana += 30
-			playSound("woohoo", 1, false)
-			g.returnToTitleScreen()
+			p.mana += 50
+			playSound("zip_up", 1, false)
 		}
+	}
+
+	if kind == "key_red" || kind == "key_blue" || kind == "key_green" {
+		item.pickUpFunc = func(p *Player) {
+			p.holding[kind]++
+			playSound("woohoo", 1, false)
+		}
+
 	}
 
 	g.items[id] = item
@@ -49,4 +56,8 @@ func (g *Game) removeItem(i *Item) {
 	g.removeSprite(i.sprite)
 	i.sprite = nil
 	i = nil
+}
+
+func standardPickup(p *Player, king string) {
+	p.holding["red_key"]++
 }

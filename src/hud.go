@@ -40,14 +40,14 @@ func initHUD() {
 
 func renderTitle(screen *ebiten.Image) {
 
-	// for x := 0; x < winWidth; x += cellSize * 2 {
-	// 	for y := 0; y < winHeight; y += cellSize * 2 {
-	// 		op := &ebiten.DrawImageOptions{}
-	// 		op.GeoM.Scale(2, 2)
-	// 		op.GeoM.Translate(float64(x), float64(y))
-	// 		screen.DrawImage(imageCache[fmt.Sprintf("walls/%d", (x+y)%9+1)], op)
-	// 	}
-	// }
+	for x := 0; x < winWidth; x += cellSize * 2 {
+		for y := 0; y < winHeight; y += cellSize * 2 {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(x), float64(y))
+			screen.DrawImage(imageCache["walls/catacombs_2"], op)
+		}
+	}
 
 	ebitenutil.DrawRect(screen, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 160})
 
@@ -126,6 +126,25 @@ func renderHud(screen *ebiten.Image, g *Game) {
 		manaOp.ColorM.Scale(0.094, 0.623, 0.984, 1.0)
 		text.DrawWithOptions(hudImage, manaStr, gameFont, manaOp)
 
+		// Draw what player is holding
+		items := []string{"key_red", "key_blue", "key_green"}
+		for i, item := range items {
+			if g.player.holding[item] <= 0 {
+				continue
+			}
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(0.8*magicSprite, 0.8*magicSprite)
+			op.GeoM.Translate(float64(winWidth)-28*magicSprite, (float64(i) * 8 * magicSprite))
+			hudImage.DrawImage(imageCache["items/"+item], op)
+
+			if g.player.holding[item] > 1 {
+				textOp := &ebiten.DrawImageOptions{}
+				textOp.GeoM.Translate(float64(winWidth)-6*magicSprite, (24*magicSprite)+(float64(i)*8*magicSprite))
+				text.DrawWithOptions(hudImage, fmt.Sprintf("%d", g.player.holding[item]), gameFont, textOp)
+			}
+		}
+
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
 	} else {
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
@@ -157,6 +176,7 @@ func (g *Game) overlay(screen *ebiten.Image) {
 		c := color.RGBA{255, 0, 0, 255}
 		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
 	}
+
 	for _, item := range g.items {
 		if item == nil {
 			continue

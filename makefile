@@ -27,6 +27,7 @@ build-win: ## 🔨 Build binaries for Windows
 	GOOS=windows go build -o bin/caster.exe $(GO_PKG)/...
 
 build: build-win build-linux ## 🔨 Build binaries
+	rm -rf editor/gfx
 	cp -r gfx editor/gfx
 
 clean: ## ♻️  Clean up

@@ -13,7 +13,7 @@ var imageCache map[string]*ebiten.Image
 
 const gfxDir = "./gfx"
 
-func loadImages() {
+func loadImageCache() {
 	imageCache = make(map[string]*ebiten.Image)
 
 	imageDirEntry, err := os.ReadDir(gfxDir)

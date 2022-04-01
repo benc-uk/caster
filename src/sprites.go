@@ -65,28 +65,6 @@ func (g *Game) removeSprite(sprite *Sprite) {
 }
 
 // ===========================================================
-// Load sprites at startup
-// ===========================================================
-// func initSprites() {
-// 	var err error
-
-// 	log.Printf("Loading sprites...")
-// 	spriteDir, err := os.ReadDir("./sprites")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	for _, file := range spriteDir {
-// 		name := strings.TrimSuffix(file.Name(), ".png")
-// 		spriteImages[name], _, err = ebitenutil.NewImageFromFile("./sprites/" + file.Name())
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 	}
-// }
-
-//
-// ===========================================================
 // Draws a sprite on the screen with correct depth
 // ===========================================================
 func (s *Sprite) draw(screen *ebiten.Image, g *Game) {

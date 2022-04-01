@@ -45,19 +45,15 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 			p.holding[kind]++
 			playSound("woohoo", 1, false)
 		}
-
 	}
 
 	g.items[id] = item
 }
 
 func (g *Game) removeItem(i *Item) {
+	screenFlashWhite(5)
 	delete(g.items, i.id)
 	g.removeSprite(i.sprite)
 	i.sprite = nil
 	i = nil
-}
-
-func standardPickup(p *Player, king string) {
-	p.holding["red_key"]++
 }

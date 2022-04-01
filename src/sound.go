@@ -26,6 +26,7 @@ func initSound() {
 
 	for _, fileEntry := range wavDir {
 		file, err := os.Open("./sounds/" + fileEntry.Name())
+		log.Println(fileEntry.Name())
 		if err != nil {
 			log.Fatal(err)
 		}

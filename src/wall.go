@@ -57,7 +57,7 @@ func newDoor(x, y int, kind string) *Wall {
 			count, holding := g.player.holding[kind]
 			if holding && count > 0 {
 				game.mapdata[x][y] = nil
-				playSound("door_open", 0.4, false)
+				playSound("unlock", 1.0, false)
 				g.player.holding[kind]--
 			} else {
 				playSound("locked", 1.0, false)
@@ -91,8 +91,19 @@ func newSwitchWall(x, y int, kind string, tx, ty int) *Wall {
 
 		// Remove a wall somewhere else
 		actionFunc: func(g *Game) {
+			wall := game.mapdata[x][y]
+			if wall.metadata[0] == "pressed" {
+				playSound("grunt", 1.0, false)
+				return
+			}
 			game.mapdata[tx][ty] = nil
 			playSound("switch", 1.0, false)
+			wall.decoration = imageCache["decoration/switch-1"]
+			wall.metadata[0] = "pressed"
+		},
+
+		metadata: []string{
+			"not_pressed",
 		},
 	}
 }

@@ -14,7 +14,7 @@ import (
 )
 
 var game *Game
-var Version = "34"
+var Version = "36"
 var titleScreen = false
 var titleLevelIndex = 0
 var titleLevels = []string{}
@@ -51,11 +51,16 @@ var overlayShown = false
 var floorOp *ebiten.DrawImageOptions
 var ceilOp *ebiten.DrawImageOptions
 
+var flashTimer = 0
+var flashColor = []float64{1, 1, 1, 0.8}
+var forceHudUpdate = false
+
 // ===========================================================
 // Load textures & sprites etc
 // ===========================================================
 func init() {
-	loadImages()
+	// Load all textures and sprites
+	loadImageCache()
 
 	// Find all maps in the maps folder
 	maps, err := filepath.Glob("maps/*.json")
@@ -66,6 +71,7 @@ func init() {
 		titleLevels = append(titleLevels, strings.TrimSuffix(filepath.Base(mapFile), ".json"))
 	}
 
+	// Load all sounds
 	initSound()
 }
 
@@ -153,39 +159,10 @@ func main() {
 	}
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	//startGame()
+	titleLevelIndex = 1
+	game.initialize(titleLevels[titleLevelIndex])
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func startGame() {
-	playSound("menu_start", 2, false)
-	titleScreen = false
-	soundStopTitleScreen()
-	soundStartAmbience()
-
-	log.Printf("Starting level...")
-	game.sprites = make([]*Sprite, 0)
-	game.monsters = make(map[uint64]*Monster, 0)
-	game.projectiles = make(map[uint64]*Projectile, 0)
-	game.items = make(map[uint64]*Item, 0)
-	game.paused = false
-
-	game.player = newPlayer(1, 1)
-	log.Printf("Player created %+v", game.player)
-
-	// Precompute operations for drawing floor and ceiling
-	floorOp = &ebiten.DrawImageOptions{}
-	floorOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
-	floorOp.GeoM.Translate(0.0, float64(winHeightHalf))
-	ceilOp = &ebiten.DrawImageOptions{}
-	ceilOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
-
-	game.loadMap(titleLevels[titleLevelIndex])
-	log.Printf("Map level '%s' loaded", game.mapName)
-
-	// HUD image cache
-	hudImage = ebiten.NewImage(winWidth, winHeight)
 }

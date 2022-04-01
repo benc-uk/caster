@@ -47,11 +47,7 @@ func newPlayer(cellX, cellY int) Player {
 		mana:             100,
 		cellX:            cellX,
 		cellY:            cellY,
-		holding:          map[string]int{
-			// "key_red":   2,
-			// "key_blue":  1,
-			// "key_green": 8,
-		},
+		holding:          map[string]int{},
 
 		moveFunc: func(t int64) float64 {
 			min := float64(cellSize) / 50.0
@@ -60,9 +56,9 @@ func newPlayer(cellX, cellY int) Player {
 		},
 
 		turnFunc: func(t int64) float64 {
-			min := math.Pi / 140.0
-			max := math.Pi / 60.0
-			return math.Min(min+math.Pow(float64(t)/2500000, 3), max)
+			min := math.Pi / 280.0
+			max := math.Pi / 70.0
+			return math.Min(min+math.Pow(float64(t)/800_000, 3), max)
 		},
 	}
 }
@@ -170,6 +166,7 @@ func (p *Player) attack() {
 	if p.mana <= 0 {
 		return
 	}
+
 	playSound("zap", 0.3, false)
 
 	p.mana -= 5
@@ -180,4 +177,16 @@ func (p *Player) attack() {
 	sx := p.x + ((cellSize / 3) * math.Cos(p.angle))
 	sy := p.y + ((cellSize / 3) * math.Sin(p.angle))
 	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 9.0), 40)
+}
+
+// damage the player
+func (p *Player) damage(amount int) {
+	screenFlashRed(10)
+	p.health -= amount
+	if p.health <= 0 {
+		p.health = 0
+		playSound("scream", 1, false)
+		titleScreen = true
+	}
+	playSound("pain", 1, false)
 }

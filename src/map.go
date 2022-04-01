@@ -42,10 +42,11 @@ func (g *Game) loadMap(name string) {
 	for _, cellRow := range mapRaw {
 		for _, cell := range cellRow {
 			g.mapdata[cell.X][cell.Y] = nil
+
+			// Walls and decorations, switches etc
 			if cell.Type == "w" {
 				g.mapdata[cell.X][cell.Y] = newWall(cell.X, cell.Y, cell.Value)
 				if len(cell.Extra) > 0 {
-					g.mapdata[cell.X][cell.Y].metadata = cell.Extra
 					if cell.Extra[0] == "deco" {
 						g.mapdata[cell.X][cell.Y].decoration = imageCache["decoration/"+cell.Extra[1]]
 					}
@@ -57,27 +58,32 @@ func (g *Game) loadMap(name string) {
 						targetY, _ := strconv.Atoi(cell.Extra[2])
 						g.mapdata[cell.X][cell.Y] = newSwitchWall(cell.X, cell.Y, cell.Value, targetX, targetY)
 					}
+					g.mapdata[cell.X][cell.Y].metadata = append(g.mapdata[cell.X][cell.Y].metadata, cell.Extra...)
 				}
 			}
 
+			// Doors
 			if cell.Type == "d" {
 				g.mapdata[cell.X][cell.Y] = newDoor(cell.X, cell.Y, cell.Value)
 			}
 
+			// Monsters
 			if cell.Type == "m" {
 				g.addMonster(cell.Value, cell.X, cell.Y)
 			}
 
+			// Items
 			if cell.Type == "i" {
 				g.addItem(cell.Value, cell.X, cell.Y)
 			}
 
+			// Player start point
 			if cell.Type == "p" {
 				g.player.x = float64(cell.X*cellSize + cellSize/2)
 				g.player.y = float64(cell.Y*cellSize + cellSize/2)
-				f, _ := strconv.Atoi(cell.Value)
-				g.player.setFacing(f)
-				log.Printf("Player spawn at %d,%d, %d", cell.X, cell.Y, f)
+				facing, _ := strconv.Atoi(cell.Value)
+				g.player.setFacing(facing)
+				log.Printf("Player spawn at %d,%d - Facing:%d", cell.X, cell.Y, facing)
 			}
 		}
 	}

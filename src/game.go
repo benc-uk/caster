@@ -1,8 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"image"
-	"image/color"
+	"log"
 	"math"
 	"os"
 	"sort"
@@ -29,11 +30,45 @@ type Game struct {
 // ===========================================================
 // Update loop handles inputs
 // ===========================================================
+func (g *Game) initialize(mapName string) {
+	playSound("menu_start", 2, false)
+	titleScreen = false
+	soundStopTitleScreen()
+	soundStartAmbience()
+
+	log.Printf("Starting level...")
+	g.sprites = make([]*Sprite, 0)
+	g.monsters = make(map[uint64]*Monster, 0)
+	g.projectiles = make(map[uint64]*Projectile, 0)
+	g.items = make(map[uint64]*Item, 0)
+	g.paused = false
+
+	g.player = newPlayer(1, 1)
+	log.Printf("Player created %+v", g.player)
+
+	// Precompute operations for drawing floor and ceiling
+	floorOp = &ebiten.DrawImageOptions{}
+	floorOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
+	floorOp.GeoM.Translate(0.0, float64(winHeightHalf))
+	ceilOp = &ebiten.DrawImageOptions{}
+	ceilOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
+
+	g.mapName = mapName
+	g.loadMap(mapName)
+	log.Printf("Map level '%s' loaded", g.mapName)
+
+	// HUD image cache
+	hudImage = ebiten.NewImage(winWidth, winHeight)
+}
+
+// ===========================================================
+// Update loop handles inputs
+// ===========================================================
 func (g *Game) Update() error {
 	if titleScreen {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) ||
 			inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
-			startGame()
+			g.initialize(titleLevels[titleLevelIndex])
 		}
 
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -227,12 +262,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	g.overlay(screen)
 
-	// msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.holding, g.mapName, Version)
-	// ebitenutil.DebugPrint(screen, msg)
+	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.holding, g.mapName, Version)
+	ebitenutil.DebugPrint(screen, msg)
+
+	// For screen flash effects
+	if flashTimer > 0 {
+		flashTimer--
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(float64(winWidth), float64(winHeight))
+		op.ColorM.Scale(flashColor[0], flashColor[1], flashColor[2], flashColor[3])
+		screen.DrawImage(imageCache["effects/flash"], op)
+	}
 
 	renderHud(screen, g)
-
-	ebitenutil.DrawLine(screen, float64(winWidth)/2, float64(winHeightHalf-7), float64(winWidth)/2, float64(winHeightHalf), color.RGBA{0, 255, 0, 255})
 
 	if g.paused {
 		renderPauseScreen(screen)

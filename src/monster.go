@@ -10,24 +10,25 @@ type Monster struct {
 	id     uint64
 	sprite *Sprite
 	health int
+	damage int
 }
 
-const monsterSize = cellSize / 4
-
 func (g *Game) addMonster(kind string, x, y int) {
+	const monsterSize = float64(cellSize) / 6.0
+
 	cx := float64(x)*cellSize + cellSize/2
 	cy := float64(y)*cellSize + cellSize/2
 
 	angle := rand.Float64() * 2 * math.Pi
 	speed := rand.Float64()*0.5 + 0.5
 
-	s := g.addSprite("monsters/"+kind, cx, cy, angle, speed, monsterSize)
-
+	// We hope that 64 bit ints are unique enough
 	id := rand.Uint64()
 	mon := &Monster{
 		id:     id,
-		sprite: s,
-		health: 100,
+		sprite: g.addSprite("monsters/"+kind, cx, cy, angle, speed, monsterSize),
+		health: 10,
+		damage: 10,
 	}
 	if kind == "skeleton" {
 		mon.health = 35
@@ -36,7 +37,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		mon.health = 75
 	}
 
-	g.monsters[id] = mon
+	g.monsters[mon.id] = mon
 }
 
 func (m *Monster) checkWallCollision(x, y float64) *Wall {
@@ -77,8 +78,20 @@ func (g *Game) updateMonsters() {
 
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
 		newY := sprite.y + math.Sin(sprite.angle)*sprite.speed
-		if wall := g.getWallAt(newX, newY); wall != nil {
+
+		if hitWall := mon.checkWallCollision(newX, newY); hitWall != nil {
 			mon.sprite.angle = mon.sprite.angle + math.Pi
+		}
+
+		if dist := mon.getDistanceToPlayer(g.player); dist < (g.player.size*3 + sprite.size) {
+			mon.sprite.angle = mon.sprite.angle + math.Pi
+			g.player.damage(mon.damage)
+			bounceX := sprite.x + math.Cos(sprite.angle)*(g.player.size+sprite.size+0.1)
+			bounceY := sprite.y + math.Sin(sprite.angle)*(g.player.size+sprite.size+0.1)
+			if hitWall := mon.checkWallCollision(bounceX, bounceY); hitWall == nil {
+				newX = bounceX
+				newY = bounceY
+			}
 		}
 
 		sprite.x = newX
@@ -99,4 +112,10 @@ func (m *Monster) kill() {
 	time.AfterFunc(time.Millisecond*300, func() {
 		game.removeSprite(s)
 	})
+}
+
+func (m *Monster) getDistanceToPlayer(p Player) float64 {
+	dx := p.x - m.sprite.x
+	dy := p.y - m.sprite.y
+	return math.Sqrt(dx*dx + dy*dy)
 }

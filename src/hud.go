@@ -101,8 +101,9 @@ func renderPauseScreen(screen *ebiten.Image) {
 }
 
 func renderHud(screen *ebiten.Image, g *Game) {
-	// Update the HUD but only every 20 frames
-	if g.ticks%20 == 0 {
+	// Update the HUD but only every 15 frames
+	if g.ticks%5 == 0 || forceHudUpdate {
+		forceHudUpdate = false
 		hudImage.Clear()
 
 		healthStr := fmt.Sprintf("%3d - Health", g.player.health)
@@ -146,9 +147,9 @@ func renderHud(screen *ebiten.Image, g *Game) {
 		}
 
 		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(3*magicSprite, 3*magicSprite)
+		op.GeoM.Scale(1.5*magicSprite, 1.5*magicSprite)
 		op.GeoM.Translate((float64(winWidth)/2.0)-(48*magicSprite), float64(winHeight)-(96*magicSprite))
-		hudImage.DrawImage(imageCache["hud/weapon_1"], op)
+		hudImage.DrawImage(imageCache["hud/weapon_0"], op)
 
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
 	} else {
@@ -206,4 +207,17 @@ func (g *Game) overlay(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(float64(winWidth)/float64(w)*overlayZoom, float64(winHeight)/float64(h)*overlayZoom)
 	screen.DrawImage(overlayImage, op)
+}
+
+// ===========================================================
+// Briefly flash the screen white, until the next HUD update
+// ===========================================================
+func screenFlashWhite(time int) {
+	flashColor = []float64{1.0, 1.0, 1.0, 0.8}
+	flashTimer = time
+}
+
+func screenFlashRed(time int) {
+	flashColor = []float64{1.5, 0, 0, 0.8}
+	flashTimer = time
 }

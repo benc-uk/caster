@@ -3,7 +3,7 @@ const MAP_SIZE = 50
 const data = {
   map: null,
   mode: null,
-  pickerMonster: ["ghoul", "skeleton", "thing"],
+  pickerMonster: ["orc", "ghoul", "skeleton", "thing"],
   pickerWall: [
     "brick_brown-vines_1",
     "brick_brown-vines_3",
@@ -51,7 +51,7 @@ const data = {
     "undead_brown_0",
     "undead_brown_3",
   ],
-  pickerItem: ["potion", "key_green", "key_red", "key_blue", "chunk", "apple", "ball"],
+  pickerItem: ["potion", "key_green", "key_red", "key_blue", "meat", "apple", "ball"],
   pickerDoor: ["basic", "key_blue", "key_red", "key_green", "switch"],
   pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret"],
   selectedMonster: 0,
@@ -154,7 +154,7 @@ const data = {
       this.cellWall(x, y)
     }
 
-    this.cellTip = `${x},${y}`
+    this.cellTip = `${x},${y} (${(x + 1) * 32 - 16}, ${(y + 1) * 32 - 16})`
   },
 
   cellClear(x, y) {

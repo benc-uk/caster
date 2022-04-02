@@ -13,9 +13,9 @@ type Projectile struct {
 	damage int
 }
 
-func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed float64, damage int) {
+func (g *Game) addProjectile(kind string, x, y float64, angle float64, speed float64, damage int, alpha float64) {
 	s := g.addSprite("effects/"+kind, x, y, angle, speed, cellSize/16.0)
-	s.alpha = 0.5
+	s.alpha = alpha
 
 	id := rand.Uint64()
 	g.projectiles[id] = &Projectile{
@@ -53,17 +53,16 @@ func (g *Game) updateProjectiles() {
 				if m == nil || g.projectiles[id] == nil {
 					continue
 				}
-
-				m.health -= g.projectiles[id].damage
-				if m.health <= 0 {
-					playSound("monster_death", 1.0, false)
-					m.kill()
-				} else {
-					playSound("monster_hit", 1.0, false)
-				}
-
+				m.damage(g.projectiles[id].damage)
 				g.removeProjectile(g.projectiles[id])
 			}
+		}
+
+		// Check if it hit the player
+		playerDist := sprite.getDistanceToPlayer(g.player)
+		if playerDist < (g.player.size*3 + sprite.size) {
+			g.player.damage(g.projectiles[id].damage)
+			g.removeProjectile(g.projectiles[id])
 		}
 
 		sprite.x = newX

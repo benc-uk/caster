@@ -67,7 +67,7 @@ func (p *Player) turn(t int64, direction float64) {
 	p.angle = p.angle + p.turnFunc(t)*direction
 }
 
-func (p *Player) move(t int64, direction float64) {
+func (p *Player) move(t int64, direction float64, strafe int) {
 	// Invoke the move function
 	speed := p.moveFunc(t)
 
@@ -75,8 +75,15 @@ func (p *Player) move(t int64, direction float64) {
 		speed = -speed
 	}
 
-	newX := p.x + math.Cos(p.angle)*speed
-	newY := p.y + math.Sin(p.angle)*speed
+	angle := p.angle
+	if strafe == 1 {
+		angle += math.Pi / 2
+	}
+	if strafe == -1 {
+		angle -= math.Pi / 2
+	}
+	newX := p.x + math.Cos(angle)*speed
+	newY := p.y + math.Sin(angle)*speed
 
 	// Check if we're going to collide with a wall
 	if wall := p.checkWallCollision(newX, newY); wall != nil {
@@ -139,25 +146,8 @@ func (p *Player) checkWallCollision(x, y float64) *Wall {
 	return nil
 }
 
-func (p Player) fireRay(distance float64) *Wall {
-	// Fire a ray in the direction we're facing
-	for t := 0.0; t < distance; t += rayStepT {
-		// Get hit point
-		cx := p.x + (t * math.Cos(p.angle))
-		cy := p.y + (t * math.Sin(p.angle))
-		// Detect collision with walls
-		wall := game.getWallAt(cx, cy)
-		if wall != nil {
-			return wall
-		}
-	}
-	return nil
-}
-
 func (p Player) use() {
-	wall := p.fireRay(cellSize)
-
-	if wall != nil {
+	if wall, _ := fireRayAngle(p.x, p.y, p.angle, cellSize); wall != nil {
 		wall.actionFunc(game)
 	}
 }
@@ -176,7 +166,7 @@ func (p *Player) attack() {
 
 	sx := p.x + ((cellSize / 3) * math.Cos(p.angle))
 	sy := p.y + ((cellSize / 3) * math.Sin(p.angle))
-	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 9.0), 40)
+	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 9.0), 40, 0.6)
 }
 
 // damage the player
@@ -186,7 +176,7 @@ func (p *Player) damage(amount int) {
 	if p.health <= 0 {
 		p.health = 0
 		playSound("scream", 1, false)
-		titleScreen = true
+		game.returnToTitleScreen()
 	}
 	playSound("pain", 1, false)
 }

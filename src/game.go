@@ -14,6 +14,15 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+type GameState int
+
+const (
+	GameStateTitle GameState = iota
+	GameStatePaused
+	GameStateMain
+	GameStateGameOver
+)
+
 // Holds most core game data
 type Game struct {
 	mapdata     [][]*Wall              // Map data is stored in a 2D array, 0 = empty, 1+ = wall
@@ -23,16 +32,15 @@ type Game struct {
 	projectiles map[uint64]*Projectile // Projectiles currently in the game
 	items       map[uint64]*Item       // Items currently in the game
 	ticks       int                    // Tick count
-	paused      bool                   // Whether the game is paused
 	mapName     string
+	state       GameState
 }
 
 // ===========================================================
 // Update loop handles inputs
 // ===========================================================
-func (g *Game) initialize(mapName string) {
+func (g *Game) start(mapName string) {
 	playSound("menu_start", 2, false)
-	titleScreen = false
 	soundStopTitleScreen()
 	soundStartAmbience()
 
@@ -41,7 +49,6 @@ func (g *Game) initialize(mapName string) {
 	g.monsters = make(map[uint64]*Monster, 0)
 	g.projectiles = make(map[uint64]*Projectile, 0)
 	g.items = make(map[uint64]*Item, 0)
-	g.paused = false
 
 	g.player = newPlayer(1, 1)
 	log.Printf("Player created %+v", g.player)
@@ -57,6 +64,8 @@ func (g *Game) initialize(mapName string) {
 	g.loadMap(mapName)
 	log.Printf("Map level '%s' loaded", g.mapName)
 
+	g.state = GameStateMain
+
 	// HUD image cache
 	hudImage = ebiten.NewImage(winWidth, winHeight)
 }
@@ -65,10 +74,10 @@ func (g *Game) initialize(mapName string) {
 // Update loop handles inputs
 // ===========================================================
 func (g *Game) Update() error {
-	if titleScreen {
+	if g.state == GameStateTitle {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) ||
 			inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
-			g.initialize(titleLevels[titleLevelIndex])
+			g.start(titleLevels[titleLevelIndex])
 		}
 
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -93,15 +102,18 @@ func (g *Game) Update() error {
 
 	g.ticks++
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		g.paused = !g.paused
-	}
-
-	if g.paused {
+	if g.state == GameStatePaused {
 		if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 			g.returnToTitleScreen()
 		}
+		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+			g.state = GameStateMain
+		}
 		return nil
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		g.state = GameStatePaused
 	}
 
 	// Update rest of game state
@@ -115,22 +127,34 @@ func (g *Game) Update() error {
 	}
 	// Now handle the actual move as long as move keys are held
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, -1)
+		g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, -1, 0)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, +1)
+		g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, +1, 0)
 	}
 
 	// When turn keys are first pressed, reset the acceleration timer
 	if inpututil.IsKeyJustPressed(ebiten.KeyRight) || inpututil.IsKeyJustPressed(ebiten.KeyD) || inpututil.IsKeyJustPressed(ebiten.KeyLeft) || inpututil.IsKeyJustPressed(ebiten.KeyA) {
-		g.player.turnStartTime = time.Now().UnixMicro()
+		if ebiten.IsKeyPressed(ebiten.KeyAlt) {
+			g.player.moveStartTime = time.Now().UnixMicro()
+		} else {
+			g.player.turnStartTime = time.Now().UnixMicro()
+		}
 	}
 	// Now handle the actual turn as long as turn keys are held
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.player.turn(time.Now().UnixMicro()-g.player.turnStartTime, -1)
+		if ebiten.IsKeyPressed(ebiten.KeyAlt) {
+			g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, +1, -1)
+		} else {
+			g.player.turn(time.Now().UnixMicro()-g.player.turnStartTime, -1)
+		}
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.player.turn(time.Now().UnixMicro()-g.player.turnStartTime, +1)
+		if ebiten.IsKeyPressed(ebiten.KeyAlt) {
+			g.player.move(time.Now().UnixMicro()-g.player.moveStartTime, +1, +1)
+		} else {
+			g.player.turn(time.Now().UnixMicro()-g.player.turnStartTime, +1)
+		}
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
@@ -160,7 +184,7 @@ func (g *Game) Update() error {
 // Main draw function
 // ===========================================================
 func (g *Game) Draw(screen *ebiten.Image) {
-	if titleScreen {
+	if g.state == GameStateTitle {
 		renderTitle(screen)
 		return
 	}
@@ -262,7 +286,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	g.overlay(screen)
 
-	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.holding, g.mapName, Version)
+	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.angle, g.player.holding, g.mapName, Version)
 	ebitenutil.DebugPrint(screen, msg)
 
 	// For screen flash effects
@@ -276,7 +300,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	renderHud(screen, g)
 
-	if g.paused {
+	if g.state == GameStatePaused {
 		renderPauseScreen(screen)
 	}
 }
@@ -305,6 +329,26 @@ func (g *Game) getWallAt(x, y float64) *Wall {
 func (g *Game) returnToTitleScreen() {
 	soundStopAmbience()
 	soundStartTitleScreen()
-	titleScreen = true
-	g.paused = true
+	g.state = GameStateTitle
+}
+
+func fireRayAt(x1, y1 float64, x2, y2 float64, maxDist float64) (wall *Wall, dist float64, angle float64) {
+	newAngle := math.Atan2(y2-y1, x2-x1)
+
+	w, d := fireRayAngle(x1, y1, newAngle, maxDist)
+	return w, d, newAngle
+}
+
+func fireRayAngle(x, y float64, angle float64, maxDist float64) (w *Wall, d float64) {
+	// Fire a ray in the direction we're facing
+	for t := 0.0; t < maxDist; t += rayStepT {
+		// Get hit point
+		cx := x + (t * math.Cos(angle))
+		cy := y + (t * math.Sin(angle))
+		// Detect collision with walls
+		if wall := game.getWallAt(cx, cy); wall != nil {
+			return wall, t
+		}
+	}
+	return nil, maxDist
 }

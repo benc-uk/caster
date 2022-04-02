@@ -14,12 +14,10 @@ import (
 )
 
 var game *Game
-var Version = "36"
-var titleScreen = false
+var Version = "38"
 var titleLevelIndex = 0
 var titleLevels = []string{}
 
-// 800×600, 1024×768, 1280×960, 1440×1080, 1600×1200
 // Global game constants
 const mapSize = 100    // Number of grid cells, maps are assumed to be square
 const cellSize = 32    // Important, how many units is each grid cell in world space - DON'T CHANGE
@@ -149,18 +147,17 @@ func main() {
 	}
 	ebiten.SetFullscreen(flagFull)
 
-	titleScreen = true
-	soundStartTitleScreen()
 	log.Printf("Starting game...")
 	log.Printf("Resolution: %dx%d, Ray ratio: %f", winWidth, winHeight, viewRaysRatio)
 
 	game = &Game{
-		paused: false,
+		state: GameStateTitle,
 	}
 
+	game.returnToTitleScreen()
+
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	titleLevelIndex = 1
-	game.initialize(titleLevels[titleLevelIndex])
+	game.start("A Test")
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

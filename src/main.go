@@ -157,7 +157,7 @@ func main() {
 	game.returnToTitleScreen()
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	game.start("A Test")
+	//game.start("A Test")
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

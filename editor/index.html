@@ -17,6 +17,7 @@
       <a class="pure-button" @click="confirm('Are you sure?') && initApp()" :disabled="loadingSaving">New</a>
       <a class="pure-button" @click="await openFile()" :disabled="loadingSaving">Open</a>
       <a class="pure-button" @click="await saveFile()" :disabled="loadingSaving">Save</a>
+      <a class="pure-button" @click="setFloorCeiling()" :disabled="loadingSaving">Colours</a>
       <div x-html="`<b>Active file:</b> ${fileName || 'none'}`"></div>
       <div class="ml-50" x-html="`<b>Edit mode:</b> ${mode || 'walls'}`"></div>
       <div class="ml-50" x-html="`<b>Cell:</b> ${cellTip}`"></div>

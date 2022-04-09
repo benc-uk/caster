@@ -15,6 +15,12 @@ type MapFileCell struct {
 	Extra []string `json:"e"`
 }
 
+type MapFile struct {
+	Cells         [][]*MapFileCell `json:"cells"`
+	FloorColour   []float64        `json:"floorColour"`
+	CeilingColour []float64        `json:"ceilingColour"`
+}
+
 // ===========================================================
 // Map parser and loader
 // ===========================================================
@@ -26,8 +32,9 @@ func (g *Game) loadMap(name string) {
 	}
 
 	// Raw map holds the unmarshalled map data from JSON
-	mapRaw := make([][]*MapFileCell, 0)
-	err = json.Unmarshal([]byte(data), &mapRaw)
+	//mapRaw := make([][]*MapFileCell, 0)
+	mapFile := MapFile{}
+	err = json.Unmarshal([]byte(data), &mapFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,8 +45,11 @@ func (g *Game) loadMap(name string) {
 		g.mapdata[i] = make([]*Wall, mapSize)
 	}
 
+	ceilOp.ColorM.Scale(mapFile.CeilingColour[0], mapFile.CeilingColour[1], mapFile.CeilingColour[2], 1)
+	floorOp.ColorM.Scale(mapFile.FloorColour[0], mapFile.FloorColour[1], mapFile.FloorColour[2], 1)
+
 	// Parse the raw map into the mapdata
-	for _, cellRow := range mapRaw {
+	for _, cellRow := range mapFile.Cells {
 		for _, cell := range cellRow {
 			g.mapdata[cell.X][cell.Y] = nil
 
@@ -52,6 +62,9 @@ func (g *Game) loadMap(name string) {
 					}
 					if cell.Extra[0] == "secret" {
 						g.mapdata[cell.X][cell.Y] = newSecretWall(cell.X, cell.Y, cell.Value)
+					}
+					if cell.Extra[0] == "exit" {
+						g.mapdata[cell.X][cell.Y] = newExitWall(cell.X, cell.Y, cell.Value)
 					}
 					if cell.Extra[0] == "switch" {
 						targetX, _ := strconv.Atoi(cell.Extra[1])

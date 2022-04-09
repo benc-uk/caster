@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -39,17 +41,21 @@ func initHUD() {
 }
 
 func renderTitle(screen *ebiten.Image) {
-
-	for x := 0; x < winWidth; x += cellSize * 2 {
-		for y := 0; y < winHeight; y += cellSize * 2 {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(x), float64(y))
-			screen.DrawImage(imageCache["walls/catacombs_2"], op)
+	if hudImage == nil {
+		hudImage = ebiten.NewImage(winWidth, winHeight)
+		bgtiles := []string{"walls/catacombs_2", "walls/wall_vines_2", "walls/brick_brown-vines_1", "walls/snake_7", "walls/slime_6", "walls/volcanic_wall_2", "walls/cobalt_stone_9", "walls/lab-metal_1", "walls/marble_wall_5"}
+		for x := 0; x < winWidth; x += cellSize * 2 {
+			for y := 0; y < winHeight; y += cellSize * 2 {
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Scale(2, 2)
+				op.GeoM.Translate(float64(x), float64(y))
+				hudImage.DrawImage(imageCache[bgtiles[rand.Intn(len(bgtiles))]], op)
+			}
 		}
 	}
 
-	ebitenutil.DrawRect(screen, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 160})
+	screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
+	ebitenutil.DrawRect(screen, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 200})
 
 	msg := "Crypt Caster"
 	textRect := text.BoundString(gameFont, msg)
@@ -94,9 +100,9 @@ func renderTitle(screen *ebiten.Image) {
 func renderPauseScreen(screen *ebiten.Image) {
 	ebitenutil.DrawRect(screen, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 190})
 	msg := "       Paused\n\n  Press Q to quit\nPress Esc to resume"
-	pausedRect := text.BoundString(gameFont, msg)
+	bounds := text.BoundString(gameFont, msg)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(winWidth/2)-float64(pausedRect.Dx())/2.0, float64(winHeight/2)-float64(pausedRect.Dy())/2.0)
+	op.GeoM.Translate(float64(winWidth/2)-float64(bounds.Dx())/2.0, float64(winHeight/2)-float64(bounds.Dy())/2.0)
 	text.DrawWithOptions(screen, msg, gameFont, op)
 }
 
@@ -155,6 +161,50 @@ func renderHud(screen *ebiten.Image, g *Game) {
 	} else {
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
 	}
+}
+
+func renderGameOver(screen *ebiten.Image) {
+	if hudImage == nil {
+		hudImage = ebiten.NewImageFromImage(screen)
+		for i := 0; i < 500; i++ {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(rand.Float64()*float64(winWidth)-100, rand.Float64()*float64(winHeight)-100)
+			hudImage.DrawImage(imageCache["hud/skull"], op)
+		}
+		ebitenutil.DrawRect(hudImage, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 190})
+		msg := "   You Have Died\nThis Is Unfortunate\n\n  Press Any Key"
+		bounds := text.BoundString(gameFont, msg)
+		op := &ebiten.DrawImageOptions{}
+		op.ColorM.Scale(0.9, 0, 0, 1)
+		op.GeoM.Translate(float64(winWidth/2)-float64(bounds.Dx())/2.0, float64(winHeight/2)-float64(bounds.Dy())/2.0)
+		text.DrawWithOptions(hudImage, msg, gameFont, op)
+	}
+	screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
+}
+
+func renderEndOfLevel(screen *ebiten.Image) {
+	if hudImage == nil {
+		hudImage = ebiten.NewImageFromImage(screen)
+		for i := 0; i < 500; i++ {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(5, 5)
+			op.GeoM.Translate(rand.Float64()*float64(winWidth)-100, rand.Float64()*float64(winHeight)-100)
+			hudImage.DrawImage(imageCache["items/ball"], op)
+		}
+		ebitenutil.DrawRect(hudImage, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 190})
+		itemPercentage := (float64(game.stats.itemsFound) / float64(game.stats.itemsTotal)) * 100.0
+		monsterPercentage := (float64(game.stats.kills) / float64(game.stats.monsters)) * 100.0
+		timeTaken := game.stats.endTime.Sub(game.stats.startTime)
+		timeTaken = timeTaken.Round(time.Second)
+
+		msg := fmt.Sprintf("You Escaped!\n\nMonsters Killed: %.1f %%\nItems Found: %.1f %%\nTime Taken: %s\nSecrets Found: 0\n\nPress Enter To Restart", monsterPercentage, itemPercentage, timeTaken)
+		bounds := text.BoundString(gameFont, msg)
+		op := &ebiten.DrawImageOptions{}
+		op.ColorM.Scale(0.1, 0.8, 0.2, 1)
+		op.GeoM.Translate(float64(winWidth/2)-float64(bounds.Dx())/2.0, float64(winHeight/2)-float64(bounds.Dy())/2.0)
+		text.DrawWithOptions(hudImage, msg, gameFont, op)
+	}
+	screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
 }
 
 // ===========================================================

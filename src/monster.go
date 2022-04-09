@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math"
 	"math/rand"
 	"time"
@@ -73,18 +74,19 @@ func (g *Game) addMonster(kind string, x, y int) {
 
 	if kind == "ghoul" {
 		mon.health = 75
-		mon.meleeDamage = 25
-		mon.baseSpeed = rand.Float64()*0.4 + 0.2
+		mon.meleeDamage = 30
+		mon.baseSpeed = rand.Float64()*0.4 + 0.3
 	}
 
 	if kind == "orc" {
 		mon.health = 50
 		mon.meleeDamage = 10
-		mon.baseSpeed = rand.Float64()*0.5 + 1
+		mon.baseSpeed = rand.Float64()*0.8 + 1
 	}
 
 	mon.sprite.speed = mon.baseSpeed
 	g.monsters[mon.id] = mon
+	g.stats.monsters++
 }
 
 func (m *Monster) checkWallCollision(x, y float64) *Wall {
@@ -107,11 +109,15 @@ func (m *Monster) checkWallCollision(x, y float64) *Wall {
 func (g *Game) updateMonsters() {
 	for _, mon := range g.monsters {
 		sprite := mon.sprite
+		playerDist := sprite.getDistanceToPlayer(g.player)
+		if playerDist > viewDistance {
+			continue
+		}
 
 		// Animations!
 		if g.ticks%20 == 0 {
 			if imageCache[sprite.kind+"-1"] != nil {
-				if mon.sprite.image == imageCache[sprite.kind+"-1"] {
+				if sprite.image == imageCache[sprite.kind+"-1"] {
 					mon.sprite.image = imageCache[sprite.kind]
 				} else {
 					mon.sprite.image = imageCache[sprite.kind+"-1"]
@@ -145,7 +151,7 @@ func (g *Game) updateMonsters() {
 		}
 
 		if mon.state == MonsterStateRecoil {
-			sprite.speed = -mon.baseSpeed
+			sprite.speed = -(mon.baseSpeed * 2)
 		}
 
 		if mon.state == MonsterStateAttack {
@@ -173,15 +179,14 @@ func (g *Game) updateMonsters() {
 			sprite.angle = angleToPlayer
 		}
 
-		//logMessage("Monster", mon.id, "state", mon.state)
-
 		// Move the monster
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
 		newY := sprite.y + math.Sin(sprite.angle)*sprite.speed
 		// Check if the hit a wall
 		if wall := mon.checkWallCollision(newX, newY); wall == nil {
 			// Check if they move into the player
-			if distPlayer := mon.sprite.getDistanceToPlayer(g.player); distPlayer < (g.player.size*3 + sprite.size) {
+			if playerDist < (g.player.size*3+sprite.size) && mon.state != MonsterStateRecoil {
+				log.Printf("Monster in state %d hit player %d", mon.state, mon.meleeDamage)
 				g.player.damage(mon.meleeDamage)
 				mon.state = MonsterStateRecoil
 				mon.stateTicker = 45
@@ -214,6 +219,7 @@ func (g *Game) removeMonster(m *Monster) {
 	g.removeSprite(m.sprite)
 	m.sprite = nil
 	m = nil
+	g.stats.kills++
 }
 
 func (m *Monster) kill() {

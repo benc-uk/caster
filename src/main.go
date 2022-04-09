@@ -154,10 +154,10 @@ func main() {
 		state: GameStateTitle,
 	}
 
-	game.returnToTitleScreen()
+	game.gameOver()
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	//game.start("A Test")
+	game.start("The Cave")
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

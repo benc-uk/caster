@@ -86,9 +86,27 @@ func (p *Player) move(t int64, direction float64, strafe int) {
 	newY := p.y + math.Sin(angle)*speed
 
 	// Check if we're going to collide with a wall
-	if wall := p.checkWallCollision(newX, newY); wall != nil {
+	if wall, cx, cy := p.checkWallCollision(newX, newY); wall != nil {
 		// Hit a wall so don't move
-		return
+		wx, wy := wall.getCenter()
+
+		// All this bullshit is to make the player slide along the wall when hitting at an acute angle
+		if math.Abs(wx-p.x) > 16 && math.Abs(cy-p.y) > 1.6 {
+			if wx-p.x < 0 {
+				newX = p.x + 1.7
+			} else {
+				newX = p.x - 1.7
+			}
+		} else if math.Abs(wy-p.y) > 16 && math.Abs(cx-p.x) > 1.6 {
+			if wy-p.y < 0 {
+				newY = p.y + 1.7
+			} else {
+				newY = p.y - 1.7
+			}
+		} else {
+			// OTHERWISE! we really did hit a wall!
+			return
+		}
 	}
 
 	// Update player position
@@ -130,20 +148,20 @@ func (p *Player) setFacing(facing int) {
 	p.angle = math.Pi / 2 * float64(facing-1)
 }
 
-func (p *Player) checkWallCollision(x, y float64) *Wall {
+func (p *Player) checkWallCollision(x, y float64) (*Wall, float64, float64) {
 	if wall := game.getWallAt(x+p.size, y); wall != nil {
-		return wall
+		return wall, x + p.size, y
 	}
 	if wall := game.getWallAt(x-p.size, y); wall != nil {
-		return wall
+		return wall, x - p.size, y
 	}
 	if wall := game.getWallAt(x, y+p.size); wall != nil {
-		return wall
+		return wall, x, y + p.size
 	}
 	if wall := game.getWallAt(x, y-p.size); wall != nil {
-		return wall
+		return wall, x, y - p.size
 	}
-	return nil
+	return nil, 0, 0
 }
 
 func (p Player) use() {
@@ -166,7 +184,7 @@ func (p *Player) attack() {
 
 	sx := p.x + ((cellSize / 3) * math.Cos(p.angle))
 	sy := p.y + ((cellSize / 3) * math.Sin(p.angle))
-	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 6.0), 40, 0.6)
+	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 5.0), 40, 0.6)
 }
 
 // damage the player
@@ -176,7 +194,7 @@ func (p *Player) damage(amount int) {
 	if p.health <= 0 {
 		p.health = 0
 		playSound("scream", 1, false)
-		game.returnToTitleScreen()
+		game.gameOver()
 	}
 	playSound("pain", 1, false)
 }

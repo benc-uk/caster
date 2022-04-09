@@ -53,7 +53,7 @@ const data = {
   ],
   pickerItem: ["potion", "key_green", "key_red", "key_blue", "meat", "apple", "ball"],
   pickerDoor: ["basic", "key_blue", "key_red", "key_green", "switch"],
-  pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret"],
+  pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret", "exit"],
   selectedMonster: 0,
   selectedWall: 0,
   selectedItem: 0,
@@ -64,6 +64,8 @@ const data = {
   fileName: "",
   loadingSaving: false,
   playerPos: [1, 1],
+  floorColour: [1, 1, 1],
+  ceilingColour: [1, 1, 1],
 
   initApp() {
     this.fileHandle = null
@@ -79,6 +81,8 @@ const data = {
     this.playerPos = [1, 1]
     this.map[1][1].t = "p"
     this.map[1][1].v = "0"
+    this.ceilingColour = [1, 1, 1]
+    this.floorColour = [1, 1, 1]
   },
 
   cellClick(x, y, evt) {
@@ -112,6 +116,13 @@ const data = {
         // Secret walls are special
         if (this.pickerDeco[this.selectedDeco] == "secret") {
           this.map[x][y].e = ["secret"]
+          return
+        }
+
+        // Exit walls are special
+        if (this.pickerDeco[this.selectedDeco] == "exit") {
+          console.log("!!!!!!!!!!!!!!!!exit")
+          this.map[x][y].e = ["exit"]
           return
         }
 
@@ -178,6 +189,7 @@ const data = {
     return this.map[x][y]
   },
 
+  // Get the main image for a cell
   getImageForCell(x, y) {
     if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
     const cell = this.map[x][y]
@@ -190,6 +202,7 @@ const data = {
     return "none"
   },
 
+  // Used for decorations and extra stuff on walls  like secrets & exits
   getOverlayForCell(x, y) {
     if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
     const cell = this.map[x][y]
@@ -203,6 +216,9 @@ const data = {
       }
       if (cell.e[0] == "switch") {
         return `url(/gfx/decoration/switch.png)`
+      }
+      if (cell.e[0] == "exit") {
+        return `url(/gfx/decoration/exit.png)`
       }
     }
   },
@@ -242,7 +258,13 @@ const data = {
       const writable = await this.fileHandle.createWritable()
       // remove nulls from map
 
-      await writable.write(JSON.stringify(this.map))
+      await writable.write(
+        JSON.stringify({
+          cells: this.map,
+          floorColour: this.floorColour,
+          ceilingColour: this.ceilingColour,
+        })
+      )
       await writable.close()
     } catch (e) {
       console.log(e)
@@ -265,7 +287,10 @@ const data = {
       this.fileName = file.name
       const data = await file.text()
       try {
-        this.map = JSON.parse(data)
+        const rawFile = JSON.parse(data)
+        this.map = rawFile.cells
+        this.floorColour = rawFile.floorColour
+        this.ceilingColour = rawFile.ceilingColour
         for (let x = 0; x < MAP_SIZE; x++) {
           for (let y = 0; y < MAP_SIZE; y++) {
             if (this.map[x][y].t == "p") {
@@ -280,6 +305,20 @@ const data = {
       }
     }
     this.loadingSaving = false
+  },
+
+  setFloorCeiling() {
+    //prompt for colors
+    const floor = prompt("Floor colour (r,g,b) 0-1", this.floorColour.join(","))
+    floor.split(",").forEach((c, i) => {
+      this.floorColour[i] = parseFloat(c)
+    })
+    const ceil = prompt("Ceiling colour (r,g,b) 0-1", this.ceilingColour.join(","))
+    ceil.split(",").forEach((c, i) => {
+      this.ceilingColour[i] = parseFloat(c)
+    })
+    // this.floorColour = this.pickerFloor
+    // this.ceilingColour = this.pickerCeiling
   },
 }
 

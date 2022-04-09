@@ -16,6 +16,10 @@ type Wall struct {
 	actionFunc func(g *Game)
 }
 
+func (w *Wall) getCenter() (float64, float64) {
+	return float64(w.x*cellSize + cellSize/2), float64(w.y*cellSize + cellSize/2)
+}
+
 func newWall(x, y int, kind string) *Wall {
 	if _, ok := imageCache["walls/"+kind]; !ok {
 		log.Fatalf("ERROR! Wall image not found: %s", kind)
@@ -104,6 +108,21 @@ func newSwitchWall(x, y int, kind string, tx, ty int) *Wall {
 
 		metadata: []string{
 			"not_pressed",
+		},
+	}
+}
+
+func newExitWall(x, y int, kind string) *Wall {
+	logMessage("Exit wall created")
+	return &Wall{
+		x:          x,
+		y:          y,
+		image:      imageCache["walls/"+kind],
+		decoration: imageCache["decoration/exit"],
+
+		// Remove this wall
+		actionFunc: func(g *Game) {
+			g.endLevel()
 		},
 	}
 }

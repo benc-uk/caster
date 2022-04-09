@@ -62,6 +62,7 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 	}
 
 	g.items[id] = item
+	g.stats.itemsTotal++
 }
 
 func (g *Game) removeItem(i *Item) {
@@ -70,4 +71,5 @@ func (g *Game) removeItem(i *Item) {
 	g.removeSprite(i.sprite)
 	i.sprite = nil
 	i = nil
+	g.stats.itemsFound++
 }

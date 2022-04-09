@@ -21,6 +21,7 @@ const (
 	GameStatePaused
 	GameStateMain
 	GameStateGameOver
+	GameStateEndLevel
 )
 
 // Holds most core game data
@@ -34,6 +35,7 @@ type Game struct {
 	ticks       int                    // Tick count
 	mapName     string
 	state       GameState
+	stats       Stats
 }
 
 // ===========================================================
@@ -49,6 +51,9 @@ func (g *Game) start(mapName string) {
 	g.monsters = make(map[uint64]*Monster, 0)
 	g.projectiles = make(map[uint64]*Projectile, 0)
 	g.items = make(map[uint64]*Item, 0)
+	g.stats = Stats{}
+	g.stats.init()
+	g.stats.startTime = time.Now()
 
 	g.player = newPlayer(1, 1)
 	log.Printf("Player created %+v", g.player)
@@ -97,6 +102,14 @@ func (g *Game) Update() error {
 			playSound("menu_click", 1, false)
 		}
 
+		return nil
+	}
+
+	if g.state == GameStateGameOver || g.state == GameStateEndLevel {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeySpace) ||
+			inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
+			g.returnToTitleScreen()
+		}
 		return nil
 	}
 
@@ -186,6 +199,16 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	if g.state == GameStateTitle {
 		renderTitle(screen)
+		return
+	}
+
+	if g.state == GameStateGameOver {
+		renderGameOver(screen)
+		return
+	}
+
+	if g.state == GameStateEndLevel {
+		renderEndOfLevel(screen)
 		return
 	}
 
@@ -330,6 +353,20 @@ func (g *Game) returnToTitleScreen() {
 	soundStopAmbience()
 	soundStartTitleScreen()
 	g.state = GameStateTitle
+	hudImage = nil
+}
+
+func (g *Game) gameOver() {
+	soundStopAmbience()
+	g.state = GameStateGameOver
+	hudImage = nil
+}
+
+func (g *Game) endLevel() {
+	soundStopAmbience()
+	g.state = GameStateEndLevel
+	hudImage = nil
+	g.stats.endTime = time.Now()
 }
 
 func fireRayAt(x1, y1 float64, x2, y2 float64, maxDist float64) (wall *Wall, dist float64, angle float64) {

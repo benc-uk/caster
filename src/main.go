@@ -14,7 +14,8 @@ import (
 )
 
 var game *Game
-var Version = "38"
+var Version = "40"
+var debug = false
 var titleLevelIndex = 0
 var titleLevels = []string{}
 
@@ -40,7 +41,7 @@ var magicSprite = 0.0 // Used to scale position of sprites
 var hudMargin = 0
 
 // Used for the map overlay view
-var overlayCellSize = cellSize / 4
+var overlayCellSize = cellSize / 2
 var overlayImage = ebiten.NewImage(mapSize*overlayCellSize, mapSize*overlayCellSize)
 var overlayZoom = 5.0
 var overlayShown = false
@@ -157,7 +158,7 @@ func main() {
 	game.gameOver()
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	game.start("The Cave")
+	game.start("Entryway")
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

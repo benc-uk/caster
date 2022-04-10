@@ -172,7 +172,7 @@ func renderGameOver(screen *ebiten.Image) {
 			hudImage.DrawImage(imageCache["hud/skull"], op)
 		}
 		ebitenutil.DrawRect(hudImage, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 190})
-		msg := "   You Have Died\nThis Is Unfortunate\n\n  Press Any Key"
+		msg := "     You Have Died\n This Is Unfortunate\n\nPress Enter to restart"
 		bounds := text.BoundString(gameFont, msg)
 		op := &ebiten.DrawImageOptions{}
 		op.ColorM.Scale(0.9, 0, 0, 1)
@@ -227,27 +227,39 @@ func (g *Game) overlay(screen *ebiten.Image) {
 		if mon == nil {
 			continue
 		}
+		if !mon.seenPlayer {
+			continue
+		}
 		sx := mon.sprite.x / float64(cellSize/overlayCellSize)
 		sy := mon.sprite.y / float64(cellSize/overlayCellSize)
 		c := color.RGBA{255, 0, 0, 255}
 		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
 	}
 
-	for _, item := range g.items {
-		if item == nil {
-			continue
-		}
-		sx := item.sprite.x / float64(cellSize/overlayCellSize)
-		sy := item.sprite.y / float64(cellSize/overlayCellSize)
-		c := color.RGBA{33, 33, 255, 255}
-		ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
-	}
+	// for _, item := range g.items {
+	// 	if item == nil {
+	// 		continue
+	// 	}
+	// 	// if !item.sprite.seen {
+	// 	// 	continue
+	// 	// }
+	// 	sx := item.sprite.x / float64(cellSize/overlayCellSize)
+	// 	sy := item.sprite.y / float64(cellSize/overlayCellSize)
+	// 	c := color.RGBA{33, 33, 255, 255}
+	// 	ebitenutil.DrawRect(overlayImage, sx-1, sy-1, 3, 3, c)
+	// }
 
 	// Draw the map
 	for y := 0; y < mapSize; y++ {
 		for x := 0; x < mapSize; x++ {
 			if g.mapdata[x][y] != nil {
+				if !g.mapdata[x][y].seen {
+					continue
+				}
 				c := color.RGBA{255, 255, 255, 58}
+				if g.mapdata[x][y].isDoor {
+					c = color.RGBA{110, 50, 15, 70}
+				}
 				ebitenutil.DrawRect(overlayImage, float64(x*overlayCellSize), float64(y*overlayCellSize), float64(overlayCellSize), float64(overlayCellSize), c)
 			}
 		}

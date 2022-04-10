@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math"
 	"math/rand"
 	"time"
@@ -30,6 +29,8 @@ type Monster struct {
 	canShoot         bool
 	projectileKind   string
 	projectileDelay  int
+	projectileSpeed  float64
+	seenPlayer       bool
 }
 
 func (g *Game) addMonster(kind string, x, y int) {
@@ -52,6 +53,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		projectileKind:   "slime",
 		stateTicker:      1,
 		projectileDelay:  60,
+		projectileSpeed:  (float64(cellSize) / 9.0),
 	}
 
 	if kind == "skeleton" {
@@ -70,6 +72,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		mon.projectileDamage = 12
 		mon.projectileKind = "slime"
 		mon.projectileDelay = 240
+		mon.projectileSpeed = mon.projectileSpeed * 0.8
 	}
 
 	if kind == "ghoul" {
@@ -82,6 +85,24 @@ func (g *Game) addMonster(kind string, x, y int) {
 		mon.health = 50
 		mon.meleeDamage = 10
 		mon.baseSpeed = rand.Float64()*0.8 + 1
+	}
+
+	if kind == "wiz" {
+		mon.health = 50
+		mon.meleeDamage = 10
+		mon.baseSpeed = rand.Float64()*0.4 + 0.3
+		mon.canShoot = true
+		mon.projectileDamage = 18
+		mon.projectileKind = "fireball"
+		mon.projectileDelay = 270
+		mon.projectileSpeed = mon.projectileSpeed * 0.6
+	}
+
+	if kind == "spectre" {
+		mon.health = 120
+		mon.meleeDamage = 15
+		mon.baseSpeed = rand.Float64()*0.8 + 1
+		mon.sprite.alpha = 0.4
 	}
 
 	mon.sprite.speed = mon.baseSpeed
@@ -151,19 +172,21 @@ func (g *Game) updateMonsters() {
 		}
 
 		if mon.state == MonsterStateRecoil {
-			sprite.speed = -(mon.baseSpeed * 2)
+			sprite.speed = -(mon.baseSpeed * 1.2)
 		}
 
 		if mon.state == MonsterStateAttack {
 			var angleToPlayer float64
 			var see bool
 			if see, angleToPlayer = mon.checkLosToPlayer(g.player); !see {
+				mon.seenPlayer = false
 				mon.state = MonsterStateIdle
 				continue
 			}
 			sx := sprite.x + math.Cos(angleToPlayer)*32
 			sy := sprite.y + math.Sin(angleToPlayer)*32
-			game.addProjectile(mon.projectileKind, sx, sy, angleToPlayer, (float64(cellSize) / 9.0), mon.projectileDamage, 1)
+			game.addProjectile(mon.projectileKind, sx, sy, angleToPlayer, mon.projectileSpeed, mon.projectileDamage, 1)
+			playSound("whoosh", 1, false)
 			mon.state = MonsterStateDoNothing
 			mon.stateTicker = mon.projectileDelay
 		}
@@ -172,6 +195,7 @@ func (g *Game) updateMonsters() {
 			var angleToPlayer float64
 			var see bool
 			if see, angleToPlayer = mon.checkLosToPlayer(g.player); !see {
+				mon.seenPlayer = false
 				mon.state = MonsterStateIdle
 				continue
 			}
@@ -186,7 +210,7 @@ func (g *Game) updateMonsters() {
 		if wall := mon.checkWallCollision(newX, newY); wall == nil {
 			// Check if they move into the player
 			if playerDist < (g.player.size*3+sprite.size) && mon.state != MonsterStateRecoil {
-				log.Printf("Monster in state %d hit player %d", mon.state, mon.meleeDamage)
+				playSound("monster_attack", 1, false)
 				g.player.damage(mon.meleeDamage)
 				mon.state = MonsterStateRecoil
 				mon.stateTicker = 45
@@ -208,6 +232,10 @@ func (m *Monster) checkLosToPlayer(p Player) (canSee bool, angle float64) {
 			return false, 0
 		}
 		if dist <= playerDist {
+			if !m.seenPlayer {
+				playSound("monster_grunt", 1, false)
+			}
+			m.seenPlayer = true
 			return true, a
 		}
 	}
@@ -224,6 +252,7 @@ func (g *Game) removeMonster(m *Monster) {
 
 func (m *Monster) kill() {
 	s := game.addSprite(m.sprite.kind+"-dead", m.sprite.x, m.sprite.y, 0, 0, 0)
+	s.alpha = m.sprite.alpha
 	game.removeMonster(m)
 	time.AfterFunc(time.Millisecond*300, func() {
 		game.removeSprite(s)

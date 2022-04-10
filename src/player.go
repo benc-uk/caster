@@ -56,7 +56,7 @@ func newPlayer(cellX, cellY int) Player {
 		},
 
 		turnFunc: func(t int64) float64 {
-			min := math.Pi / 280.0
+			min := math.Pi / 300.0
 			max := math.Pi / 70.0
 			return math.Min(min+math.Pow(float64(t)/800_000, 3), max)
 		},

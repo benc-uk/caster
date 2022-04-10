@@ -10,6 +10,7 @@ type Item struct {
 	pickUpFunc func(*Player)
 	cellX      int
 	cellY      int
+	seen       bool
 }
 
 func (g *Game) addItem(kind string, cellX, cellY int) {
@@ -29,7 +30,7 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 	if kind == "potion" {
 		item.pickUpFunc = func(p *Player) {
 			p.mana += 25
-			playSound("zip_up", 1, false)
+			playSound("potion_get", 1, false)
 		}
 	}
 
@@ -43,21 +44,21 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 	if kind == "meat" {
 		item.pickUpFunc = func(p *Player) {
 			p.health += 25
-			playSound("zip_up", 1, false)
+			playSound("yum", 1, false)
 		}
 	}
 
 	if kind == "apple" {
 		item.pickUpFunc = func(p *Player) {
 			p.health += 10
-			playSound("zip_up", 1, false)
+			playSound("gulp", 1, false)
 		}
 	}
 
 	if kind == "key_red" || kind == "key_blue" || kind == "key_green" {
 		item.pickUpFunc = func(p *Player) {
 			p.holding[kind]++
-			playSound("woohoo", 1, false)
+			playSound("key_up", 1, false)
 		}
 	}
 

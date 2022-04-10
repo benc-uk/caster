@@ -43,8 +43,7 @@ type Game struct {
 // ===========================================================
 func (g *Game) start(mapName string) {
 	playSound("menu_start", 2, false)
-	soundStopTitleScreen()
-	soundStartAmbience()
+	playSoundLoop("loop_ambient_1", 1)
 
 	log.Printf("Starting level...")
 	g.sprites = make([]*Sprite, 0)
@@ -237,6 +236,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 
 			// If wall was hit...
+			wall.seen = true
 
 			// Texture mapping
 			hitx := cx/cellSize - math.Floor(cx/cellSize)
@@ -350,20 +350,20 @@ func (g *Game) getWallAt(x, y float64) *Wall {
 }
 
 func (g *Game) returnToTitleScreen() {
-	soundStopAmbience()
-	soundStartTitleScreen()
+	//stopAllLoops()
+	playSoundLoop("loop_menu", 0.5)
 	g.state = GameStateTitle
 	hudImage = nil
 }
 
 func (g *Game) gameOver() {
-	soundStopAmbience()
+	playSoundLoop("loop_gameover", 0.6)
 	g.state = GameStateGameOver
 	hudImage = nil
 }
 
 func (g *Game) endLevel() {
-	soundStopAmbience()
+	playSoundLoop("loop_end", 0.6)
 	g.state = GameStateEndLevel
 	hudImage = nil
 	g.stats.endTime = time.Now()

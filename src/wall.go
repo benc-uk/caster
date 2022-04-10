@@ -12,6 +12,8 @@ type Wall struct {
 	image      *ebiten.Image
 	decoration *ebiten.Image
 	metadata   []string
+	seen       bool
+	isDoor     bool
 
 	actionFunc func(g *Game)
 }
@@ -38,9 +40,10 @@ func newWall(x, y int, kind string) *Wall {
 
 func newDoor(x, y int, kind string) *Wall {
 	door := &Wall{
-		x:     x,
-		y:     y,
-		image: imageCache["doors/"+kind],
+		x:      x,
+		y:      y,
+		image:  imageCache["doors/"+kind],
+		isDoor: true,
 
 		// Default is a locked door
 		actionFunc: func(g *Game) {

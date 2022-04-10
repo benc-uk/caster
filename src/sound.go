@@ -12,6 +12,7 @@ import (
 
 var audioCtx *audio.Context
 var sounds map[string]*audio.Player
+var loopSound *audio.Player
 
 func initSound() {
 	log.Printf("Loading sounds...")
@@ -63,21 +64,14 @@ func playSound(sound string, volume float64, wait bool) {
 	}
 }
 
-func soundStartAmbience() {
-	sounds["loop_ambient_1"].Play()
-}
-
-func soundStopAmbience() {
-	sounds["loop_ambient_1"].Pause()
-	_ = sounds["loop_menu"].Rewind()
-}
-
-func soundStopTitleScreen() {
-	sounds["loop_menu"].Pause()
-	_ = sounds["loop_menu"].Rewind()
-}
-
-func soundStartTitleScreen() {
-	sounds["loop_menu"].SetVolume(0.5)
-	sounds["loop_menu"].Play()
+func playSoundLoop(sound string, volume float64) {
+	if loopSound != nil {
+		loopSound.Pause()
+		_ = loopSound.Rewind()
+	}
+	if sounds[sound] != nil {
+		loopSound = sounds[sound]
+		loopSound.SetVolume(volume)
+		loopSound.Play()
+	}
 }

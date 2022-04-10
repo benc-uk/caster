@@ -234,6 +234,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			if wall == nil {
 				continue
 			}
+			if wall.invisible {
+				continue
+			}
 
 			// If wall was hit...
 			wall.seen = true

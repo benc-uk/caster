@@ -176,6 +176,8 @@ func (p *Player) attack() {
 	if p.mana <= 0 {
 		return
 	}
+
+	// Show the attack animation
 	p.justFired = true
 	forceHudUpdate = true
 
@@ -188,7 +190,7 @@ func (p *Player) attack() {
 
 	sx := p.x + ((cellSize / 3) * math.Cos(p.angle))
 	sy := p.y + ((cellSize / 3) * math.Sin(p.angle))
-	game.addProjectile("magic_1", sx, sy, p.angle, (float64(cellSize) / 5.0), 40, 0.6)
+	game.addProjectile("magic", sx, sy, p.angle, (float64(cellSize) / 5.0), 40, 0.6)
 }
 
 // damage the player

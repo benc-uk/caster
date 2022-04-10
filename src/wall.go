@@ -14,6 +14,7 @@ type Wall struct {
 	metadata   []string
 	seen       bool
 	isDoor     bool
+	invisible  bool
 
 	actionFunc func(g *Game)
 }
@@ -129,4 +130,15 @@ func newExitWall(x, y int, kind string) *Wall {
 			g.endLevel()
 		},
 	}
+}
+
+func newInvisibleWall(x, y int) *Wall {
+	return &Wall{
+		x:          x,
+		y:          y,
+		image:      nil,
+		decoration: nil,
+		invisible:  true,
+	}
+
 }

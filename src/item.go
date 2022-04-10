@@ -10,7 +10,7 @@ type Item struct {
 	pickUpFunc func(*Player)
 	cellX      int
 	cellY      int
-	seen       bool
+	blocking   bool
 }
 
 func (g *Game) addItem(kind string, cellX, cellY int) {
@@ -34,7 +34,7 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 		}
 	}
 
-	if kind == "ball" {
+	if kind == "crystal" {
 		item.pickUpFunc = func(p *Player) {
 			p.mana += 50
 			playSound("zip_up", 1, false)
@@ -60,6 +60,12 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 			p.holding[kind]++
 			playSound("key_up", 1, false)
 		}
+	}
+
+	if kind == "column" || kind == "barrel" {
+		item.pickUpFunc = func(p *Player) {
+		}
+		game.mapdata[cellX][cellY] = newInvisibleWall(cellX, cellY)
 	}
 
 	g.items[id] = item

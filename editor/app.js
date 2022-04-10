@@ -79,7 +79,7 @@ const data = {
     "wall_yellow_rock_0",
     "wall_yellow_rock_1",
   ],
-  pickerItem: ["potion", "key_green", "key_red", "key_blue", "meat", "apple", "ball"],
+  pickerItem: ["potion", "key_green", "key_red", "key_blue", "meat", "apple", "crystal", "column", "barrel"],
   pickerDoor: ["basic", "key_blue", "key_red", "key_green", "switch"],
   pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret", "exit"],
   selectedMonster: 0,

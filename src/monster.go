@@ -34,7 +34,7 @@ type Monster struct {
 }
 
 func (g *Game) addMonster(kind string, x, y int) {
-	const monsterSize = float64(cellSize) / 6.0
+	const monsterSize = float64(cellSize) / 4
 	cx := float64(x)*cellSize + cellSize/2
 	cy := float64(y)*cellSize + cellSize/2
 	angle := rand.Float64() * 2 * math.Pi

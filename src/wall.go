@@ -76,6 +76,7 @@ func newDoor(x, y int, kind string) *Wall {
 }
 
 func newSecretWall(x, y int, kind string) *Wall {
+	game.stats.secretsTotal++
 	return &Wall{
 		x:     x,
 		y:     y,
@@ -85,6 +86,7 @@ func newSecretWall(x, y int, kind string) *Wall {
 		actionFunc: func(g *Game) {
 			game.mapdata[x][y] = nil
 			playSound("secret", 1.0, false)
+			game.stats.secretsFound++
 		},
 	}
 }
@@ -116,7 +118,6 @@ func newSwitchWall(x, y int, kind string, tx, ty int) *Wall {
 }
 
 func newExitWall(x, y int, kind string) *Wall {
-	logMessage("Exit wall created")
 	return &Wall{
 		x:          x,
 		y:          y,

@@ -31,6 +31,8 @@ type Player struct {
 	turnFunc      func(int64) float64
 
 	holding map[string]int
+
+	justFired bool
 }
 
 func newPlayer(cellX, cellY int) Player {
@@ -174,6 +176,8 @@ func (p *Player) attack() {
 	if p.mana <= 0 {
 		return
 	}
+	p.justFired = true
+	forceHudUpdate = true
 
 	playSound("zap", 0.3, false)
 

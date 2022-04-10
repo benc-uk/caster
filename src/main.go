@@ -54,6 +54,8 @@ var flashTimer = 0
 var flashColor = []float64{1, 1, 1, 0.8}
 var forceHudUpdate = false
 
+const hudTickInterval = 5 // How many ticks between HUD re-draws
+
 // ===========================================================
 // Load textures & sprites etc
 // ===========================================================
@@ -84,15 +86,18 @@ func main() {
 	var flagRatio int
 	var flagFull bool
 	var flagVsync bool
+	var flagDebug bool
 	flag.StringVar(&flagRes, "res", "medium", "Screen resolution: tiny, small, medium, large, larger or super")
 	flag.IntVar(&flagRatio, "ratio", 4, "Ray rendering ratio as a percentage of screen width")
 	flag.BoolVar(&flagFull, "fullscreen", false, "Fullscreen mode (default false)")
 	flag.BoolVar(&flagVsync, "vsync", false, "Enable vsync (default false)")
+	flag.BoolVar(&flagDebug, "debug", false, "Enable debug mode (default false)")
 	flag.Parse()
 
 	if flagRatio > 0 {
 		viewRaysRatio = float64(flagRatio)
 	}
+	debug = flagDebug
 
 	switch flagRes {
 	case "tiny":
@@ -155,10 +160,10 @@ func main() {
 		state: GameStateTitle,
 	}
 
-	game.gameOver()
-
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	game.start("Entryway")
+	//game.start("Test")
+
+	game.returnToTitleScreen()
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

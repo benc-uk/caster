@@ -72,10 +72,10 @@ func renderTitle(screen *ebiten.Image) {
 	text.DrawWithOptions(screen, msg, gameFont, op)
 
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(5.0, 5.0)
+	op.GeoM.Scale(magicSprite*0.6, magicSprite*0.6)
 	op.Filter = ebiten.FilterNearest
-	op.GeoM.Translate(float64(winWidth)-(38*magicSprite), float64(winHeight/3)-float64(textRect.Dy())/2.0-(18*magicSprite))
-	screen.DrawImage(imageCache["items/ball"], op)
+	op.GeoM.Translate(float64(winWidth)-(35*magicSprite), float64(winHeight/3)-float64(textRect.Dy())/2.0-(15*magicSprite))
+	screen.DrawImage(imageCache["hud/scroll"], op)
 
 	msg = fmt.Sprintf("%d. %s", titleLevelIndex+1, titleLevels[titleLevelIndex])
 	textRect = text.BoundString(gameFont, msg)
@@ -108,7 +108,7 @@ func renderPauseScreen(screen *ebiten.Image) {
 
 func renderHud(screen *ebiten.Image, g *Game) {
 	// Update the HUD but only every 15 frames
-	if g.ticks%5 == 0 || forceHudUpdate {
+	if g.ticks%hudTickInterval == 0 || forceHudUpdate {
 		forceHudUpdate = false
 		hudImage.Clear()
 
@@ -154,7 +154,13 @@ func renderHud(screen *ebiten.Image, g *Game) {
 
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(1.5*magicSprite, 1.5*magicSprite)
-		op.GeoM.Translate((float64(winWidth)/2.0)-(48*magicSprite), float64(winHeight)-(96*magicSprite))
+		weaponOffset := 96.0
+		if g.player.justFired {
+			weaponOffset = 90
+			g.player.justFired = false
+			op.ColorM.Scale(1, 2, 1, 1)
+		}
+		op.GeoM.Translate((float64(winWidth)/2.0)-(48*magicSprite), float64(winHeight)-(weaponOffset*magicSprite))
 		hudImage.DrawImage(imageCache["hud/weapon_0"], op)
 
 		screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
@@ -184,26 +190,42 @@ func renderGameOver(screen *ebiten.Image) {
 
 func renderEndOfLevel(screen *ebiten.Image) {
 	if hudImage == nil {
+
+		itemPercentage := (float64(game.stats.itemsFound) / float64(game.stats.itemsTotal)) * 100.0
+		monsterPercentage := (float64(game.stats.kills) / float64(game.stats.monsters)) * 100.0
+		secretPercentage := 100.0
+		if game.stats.secretsTotal > 0 {
+			secretPercentage = (float64(game.stats.secretsFound) / float64(game.stats.secretsTotal)) * 100.0
+		}
+		timeTaken := game.stats.endTime.Sub(game.stats.startTime)
+		timeTaken = timeTaken.Round(time.Second)
+
+		specialMsg := ""
+		if secretPercentage >= 100.0 && monsterPercentage >= 100.0 && itemPercentage >= 100.0 {
+			specialMsg = "\n\nWOW! PERFECT JOB!!"
+		}
+
 		hudImage = ebiten.NewImageFromImage(screen)
 		for i := 0; i < 500; i++ {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(5, 5)
 			op.GeoM.Translate(rand.Float64()*float64(winWidth)-100, rand.Float64()*float64(winHeight)-100)
-			hudImage.DrawImage(imageCache["items/ball"], op)
+			if specialMsg != "" {
+				hudImage.DrawImage(imageCache["hud/rainbow"], op)
+			} else {
+				hudImage.DrawImage(imageCache["hud/cloud"], op)
+			}
 		}
 		ebitenutil.DrawRect(hudImage, 0, 0, float64(winWidth), float64(winHeight), color.RGBA{0, 0, 0, 190})
-		itemPercentage := (float64(game.stats.itemsFound) / float64(game.stats.itemsTotal)) * 100.0
-		monsterPercentage := (float64(game.stats.kills) / float64(game.stats.monsters)) * 100.0
-		timeTaken := game.stats.endTime.Sub(game.stats.startTime)
-		timeTaken = timeTaken.Round(time.Second)
 
-		msg := fmt.Sprintf("You Escaped!\n\nMonsters Killed: %.1f %%\nItems Found: %.1f %%\nTime Taken: %s\nSecrets Found: 0\n\nPress Enter To Restart", monsterPercentage, itemPercentage, timeTaken)
+		msg := fmt.Sprintf("    You Escaped!\n\nMonsters Killed: %.1f %%\nItems Found: %.1f %%\nSecrets Found: %.1f %%\nTime Taken: %s%s\n\nPress Enter To Restart", monsterPercentage, itemPercentage, secretPercentage, timeTaken, specialMsg)
 		bounds := text.BoundString(gameFont, msg)
 		op := &ebiten.DrawImageOptions{}
 		op.ColorM.Scale(0.1, 0.8, 0.2, 1)
 		op.GeoM.Translate(float64(winWidth/2)-float64(bounds.Dx())/2.0, float64(winHeight/2)-float64(bounds.Dy())/2.0)
 		text.DrawWithOptions(hudImage, msg, gameFont, op)
 	}
+
 	screen.DrawImage(hudImage, &ebiten.DrawImageOptions{})
 }
 

@@ -177,7 +177,7 @@ func (g *Game) Update() error {
 		g.player.attack()
 	}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyO) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyTab) {
 		overlayShown = !overlayShown
 	}
 
@@ -309,8 +309,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Overlay map
 	g.overlay(screen)
 
-	msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.angle, g.player.holding, g.mapName, Version)
-	ebitenutil.DebugPrint(screen, msg)
+	if debug {
+		msg := fmt.Sprintf("FPS: %0.2f\nPlayer: %f,%f,%f\nHolding: %+v\nLevel: %s\nVer: %s", ebiten.CurrentFPS(), g.player.x, g.player.y, g.player.angle, g.player.holding, g.mapName, Version)
+		ebitenutil.DebugPrint(screen, msg)
+	}
 
 	// For screen flash effects
 	if flashTimer > 0 {

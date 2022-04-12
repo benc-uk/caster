@@ -14,7 +14,7 @@ import (
 )
 
 var game *Game
-var Version = "41"
+var Version = "42"
 var debug = false
 var titleLevelIndex = 0
 var titleLevels = []string{}
@@ -60,6 +60,7 @@ const hudTickInterval = 5 // How many ticks between HUD re-draws
 // Load textures & sprites etc
 // ===========================================================
 func init() {
+	log.Printf("Initializing game, version: %s", Version)
 	// Load all textures and sprites
 	loadImageCache()
 
@@ -87,6 +88,8 @@ func main() {
 	var flagFull bool
 	var flagVsync bool
 	var flagDebug bool
+	var flagLevel string
+	flag.StringVar(&flagLevel, "level", "", "Auto start in this level/map")
 	flag.StringVar(&flagRes, "res", "medium", "Screen resolution: tiny, small, medium, large, larger or super")
 	flag.IntVar(&flagRatio, "ratio", 4, "Ray rendering ratio as a percentage of screen width")
 	flag.BoolVar(&flagFull, "fullscreen", false, "Fullscreen mode (default false)")
@@ -160,10 +163,13 @@ func main() {
 		state: GameStateTitle,
 	}
 
-	// HACK: ONLY FOR DEBUGGING/TESTING
-	game.start("Test")
+	if flagLevel != "" {
+		game.start(flagLevel)
+	} else {
+		game.returnToTitleScreen()
+	}
 
-	//game.returnToTitleScreen()
+	log.Printf("Main game run loop starting...")
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

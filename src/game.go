@@ -55,7 +55,6 @@ func (g *Game) start(mapName string) {
 	g.stats.startTime = time.Now()
 
 	g.player = newPlayer(1, 1)
-	log.Printf("Player created %+v", g.player)
 
 	// Precompute operations for drawing floor and ceiling
 	floorOp = &ebiten.DrawImageOptions{}
@@ -65,11 +64,20 @@ func (g *Game) start(mapName string) {
 	ceilOp.GeoM.Scale(float64(winWidth)/10.0, float64(winHeightHalf)/600.0)
 
 	g.mapName = mapName
-	g.loadMap(mapName)
+	err := g.loadMap(mapName)
+	if err != nil {
+		log.Printf("ERROR! Failed to load map: %v", err)
+		g.returnToTitleScreen()
+		return
+	}
 	log.Printf("Map level '%s' loaded", g.mapName)
 
 	g.state = GameStateMain
 
+	if debug {
+		log.Printf("Player: %+v", g.player)
+		log.Printf("Level stats: %+v", g.stats)
+	}
 	// HUD image cache
 	hudImage = ebiten.NewImage(winWidth, winHeight)
 }
@@ -231,10 +239,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 			// Detect collision with walls
 			wall := g.getWallAt(cx, cy)
-			if wall == nil {
-				continue
-			}
-			if wall.invisible {
+			if wall == nil || wall.invisible {
 				continue
 			}
 
@@ -355,19 +360,21 @@ func (g *Game) getWallAt(x, y float64) *Wall {
 }
 
 func (g *Game) returnToTitleScreen() {
-	//stopAllLoops()
+	log.Printf("Entering title screen")
 	playSoundLoop("loop_menu", 0.5)
 	g.state = GameStateTitle
 	hudImage = nil
 }
 
 func (g *Game) gameOver() {
+	log.Printf("Game over! :(")
 	playSoundLoop("loop_gameover", 0.6)
 	g.state = GameStateGameOver
 	hudImage = nil
 }
 
 func (g *Game) endLevel() {
+	log.Printf("Level complete!")
 	playSoundLoop("loop_end", 0.6)
 	g.state = GameStateEndLevel
 	hudImage = nil

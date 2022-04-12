@@ -24,11 +24,11 @@ type MapFile struct {
 // ===========================================================
 // Map parser and loader
 // ===========================================================
-func (g *Game) loadMap(name string) {
+func (g *Game) loadMap(name string) error {
 	// Load the map file
 	data, err := ioutil.ReadFile("./maps/" + name + ".json")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Raw map holds the unmarshalled map data from JSON
@@ -36,7 +36,7 @@ func (g *Game) loadMap(name string) {
 	mapFile := MapFile{}
 	err = json.Unmarshal([]byte(data), &mapFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// This is the real map data used by the game
@@ -94,6 +94,8 @@ func (g *Game) loadMap(name string) {
 			if cell.Type == "p" {
 				g.player.x = float64(cell.X*cellSize + cellSize/2)
 				g.player.y = float64(cell.Y*cellSize + cellSize/2)
+				g.player.cellX = cell.X
+				g.player.cellY = cell.Y
 				facing, _ := strconv.Atoi(cell.Value)
 				g.player.setFacing(facing)
 				log.Printf("Player spawn at %d,%d - Facing:%d", cell.X, cell.Y, facing)
@@ -102,4 +104,5 @@ func (g *Game) loadMap(name string) {
 	}
 
 	g.mapName = name
+	return nil
 }

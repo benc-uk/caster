@@ -78,7 +78,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 	if kind == "ghoul" {
 		mon.health = 75
 		mon.meleeDamage = 30
-		mon.baseSpeed = rand.Float64()*0.4 + 0.3
+		mon.baseSpeed = rand.Float64()*0.6 + 0.3
 	}
 
 	if kind == "orc" {
@@ -101,7 +101,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 	if kind == "spectre" {
 		mon.health = 120
 		mon.meleeDamage = 15
-		mon.baseSpeed = rand.Float64()*0.8 + 1
+		mon.baseSpeed = rand.Float64()*0.6 + 1
 		mon.sprite.alpha = 0.4
 	}
 

@@ -66,6 +66,7 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 		item.pickUpFunc = func(p *Player) {
 		}
 		game.mapdata[cellX][cellY] = newInvisibleWall(cellX, cellY)
+		g.stats.itemsTotal--
 	}
 
 	g.items[id] = item

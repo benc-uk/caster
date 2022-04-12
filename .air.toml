@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 include_ext = [ "go" ]
 include_dir = [ "src" ]
 cmd = "go build -o ./tmp/caster ./src/..."
-full_bin = "./tmp/caster -debug -res large"
+full_bin = "./tmp/caster -debug -level 'The Sewers' -res large"
 
 [misc]
 clean_on_exit = true

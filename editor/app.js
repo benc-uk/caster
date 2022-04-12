@@ -81,7 +81,7 @@ const data = {
   ],
   pickerItem: ["potion", "key_green", "key_red", "key_blue", "meat", "apple", "crystal", "column", "barrel"],
   pickerDoor: ["basic", "key_blue", "key_red", "key_green", "switch"],
-  pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "secret", "exit"],
+  pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "pipe", "struts", "crack", "secret", "exit"],
   selectedMonster: 0,
   selectedWall: 0,
   selectedItem: 0,
@@ -149,7 +149,6 @@ const data = {
 
         // Exit walls are special
         if (this.pickerDeco[this.selectedDeco] == "exit") {
-          console.log("!!!!!!!!!!!!!!!!exit")
           this.map[x][y].e = ["exit"]
           return
         }
@@ -159,7 +158,12 @@ const data = {
           const target = prompt("Enter the target cell for this switch:", "x,y")
           if (!target) return
           const targetParts = target.split(",")
+          if (targetParts.length != 2 || !parseInt(targetParts[0]) || !parseInt(targetParts[1])) {
+            alert("Invalid input, please provide the x,y coordinates of the target cell.")
+            return
+          }
           this.map[x][y].e = ["switch", targetParts[0], targetParts[1]]
+          this.mode = "wall"
           return
         }
 

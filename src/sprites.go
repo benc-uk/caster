@@ -74,9 +74,7 @@ func (s *Sprite) draw(screen *ebiten.Image, g *Game) {
 
 	// Sizing and scaling based on depth
 	spriteDist := (1.0 / s.dist)
-	// darken := (1 - (s.dist / viewDistance)) * 1.6
-	// darken = math.Min(1, math.Max(darken, 0.9))
-	//logMessage("sprite dist: %f %f", spriteDist, darken)
+	darken := (1 - (s.dist / viewDistance)) + 0.1
 	spriteScale := spriteDist * float64(winHeight)
 	// Direction to player
 	spriteDir := math.Atan2(s.y-g.player.y, s.x-g.player.x)
@@ -105,14 +103,13 @@ func (s *Sprite) draw(screen *ebiten.Image, g *Game) {
 	spriteOp := &ebiten.DrawImageOptions{}
 	spriteOp.GeoM.Scale(spriteScale, spriteScale)
 	spriteOp.GeoM.Translate(hOffset, vOffset)
-	spriteOp.ColorM.Scale(1, 1, 1, s.alpha)
+	spriteOp.ColorM.Scale(darken, darken, darken, s.alpha)
 
 	// Slice the sprite image into strips and render each one
 	spriteImg := s.image
 	for slice := 0; slice < spriteImgSize; slice++ {
 		// Each loop move the slice along with scaling taken into account
 		spriteOp.GeoM.Translate(spriteScale, 0)
-		//spriteOp.ColorM.Scale(1*darken, 1*darken, 1*darken, 1)
 
 		// Check the depth buffer, and skip if the sprite is a wall
 		depthBufferX := int(math.Floor(spriteOp.GeoM.Element(0, 2)) / viewRaysRatio)

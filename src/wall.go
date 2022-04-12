@@ -140,5 +140,4 @@ func newInvisibleWall(x, y int) *Wall {
 		decoration: nil,
 		invisible:  true,
 	}
-
 }

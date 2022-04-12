@@ -28,7 +28,7 @@ type Monster struct {
 	baseSpeed        float64
 	canShoot         bool
 	projectileKind   string
-	projectileDelay  int
+	projectileProb   float64
 	projectileSpeed  float64
 	seenPlayer       bool
 }
@@ -52,7 +52,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		canShoot:         false,
 		projectileKind:   "slime",
 		stateTicker:      1,
-		projectileDelay:  60,
+		projectileProb:   0.0,
 		projectileSpeed:  (float64(cellSize) / 9.0),
 	}
 
@@ -62,7 +62,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		mon.baseSpeed = rand.Float64()*0.5 + 0.5
 		mon.projectileDamage = 6
 		mon.projectileKind = "bone"
-		mon.projectileDelay = 180
+		mon.projectileProb = 60.0
 	}
 
 	if kind == "thing" {
@@ -71,7 +71,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		mon.baseSpeed = rand.Float64()*0.5 + 0.5
 		mon.projectileDamage = 12
 		mon.projectileKind = "slime"
-		mon.projectileDelay = 240
+		mon.projectileProb = 50.0
 		mon.projectileSpeed = mon.projectileSpeed * 0.8
 	}
 
@@ -94,7 +94,7 @@ func (g *Game) addMonster(kind string, x, y int) {
 		mon.canShoot = true
 		mon.projectileDamage = 18
 		mon.projectileKind = "fireball"
-		mon.projectileDelay = 270
+		mon.projectileProb = 45.0
 		mon.projectileSpeed = mon.projectileSpeed * 0.6
 	}
 
@@ -110,21 +110,21 @@ func (g *Game) addMonster(kind string, x, y int) {
 	g.stats.monsters++
 }
 
-func (m *Monster) checkWallCollision(x, y float64) *Wall {
+func (m *Monster) checkWallCollision(x, y float64) (*Wall, float64, float64) {
 	size := m.sprite.size
 	if wall := game.getWallAt(x+size, y); wall != nil {
-		return wall
+		return wall, x + size, y
 	}
 	if wall := game.getWallAt(x-size, y); wall != nil {
-		return wall
+		return wall, x - size, y
 	}
 	if wall := game.getWallAt(x, y+size); wall != nil {
-		return wall
+		return wall, x, y + size
 	}
 	if wall := game.getWallAt(x, y-size); wall != nil {
-		return wall
+		return wall, x, y - size
 	}
-	return nil
+	return nil, 0, 0
 }
 
 func (g *Game) updateMonsters() {
@@ -183,12 +183,12 @@ func (g *Game) updateMonsters() {
 				mon.state = MonsterStateIdle
 				continue
 			}
-			sx := sprite.x + math.Cos(angleToPlayer)*32
-			sy := sprite.y + math.Sin(angleToPlayer)*32
-			game.addProjectile(mon.projectileKind, sx, sy, angleToPlayer, mon.projectileSpeed, mon.projectileDamage, 1)
-			playSound("whoosh", 1, false)
-			mon.state = MonsterStateDoNothing
-			mon.stateTicker = mon.projectileDelay
+			if rand.Float64()*10000.0 <= mon.projectileProb {
+				sx := sprite.x + math.Cos(angleToPlayer)*32
+				sy := sprite.y + math.Sin(angleToPlayer)*32
+				game.addProjectile(mon.projectileKind, sx, sy, angleToPlayer, mon.projectileSpeed, mon.projectileDamage, 1)
+				playSound("whoosh", 1, false)
+			}
 		}
 
 		if mon.state == MonsterStateMelee {
@@ -206,8 +206,9 @@ func (g *Game) updateMonsters() {
 		// Move the monster
 		newX := sprite.x + math.Cos(sprite.angle)*sprite.speed
 		newY := sprite.y + math.Sin(sprite.angle)*sprite.speed
-		// Check if the hit a wall
-		if wall := mon.checkWallCollision(newX, newY); wall == nil {
+
+		// Check if it hits a wall
+		if wall, _, _ := mon.checkWallCollision(newX, newY); wall == nil {
 			// Check if they move into the player
 			if playerDist < (g.player.size*3+sprite.size) && mon.state != MonsterStateRecoil {
 				playSound("monster_attack", 1, false)
@@ -215,11 +216,15 @@ func (g *Game) updateMonsters() {
 				mon.state = MonsterStateRecoil
 				mon.stateTicker = 45
 			}
-			sprite.x = newX
-			sprite.y = newY
 		} else {
-			sprite.speed = -sprite.speed
+			// This weird code, stops monsters getting stuck on walls when walking towards the player
+			sprite.speed = mon.baseSpeed
+			mon.state = MonsterStateDoNothing
+			mon.stateTicker = 5
+			mon.sprite.angle += math.Pi / 4
 		}
+		sprite.x = newX
+		sprite.y = newY
 	}
 }
 

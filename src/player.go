@@ -89,9 +89,10 @@ func (p *Player) move(t int64, direction float64, strafe int) {
 
 	// Check if we're going to collide with a wall
 	if wall, cx, cy := p.checkWallCollision(newX, newY); wall != nil {
-		// Hit a wall so don't move
+		// Hit a wall, work out if we stop or slide
 		wx, wy := wall.getCenter()
 
+		// TODO: This really needs improving
 		// All this bullshit is to make the player slide along the wall when hitting at an acute angle
 		if math.Abs(wx-p.x) > 16 && math.Abs(cy-p.y) > 1.6 {
 			if wx-p.x < 0 {

@@ -14,7 +14,7 @@ import (
 )
 
 var game *Game
-var Version = "40"
+var Version = "41"
 var debug = false
 var titleLevelIndex = 0
 var titleLevels = []string{}
@@ -161,9 +161,9 @@ func main() {
 	}
 
 	// HACK: ONLY FOR DEBUGGING/TESTING
-	//game.start("Test")
+	game.start("Test")
 
-	game.returnToTitleScreen()
+	//game.returnToTitleScreen()
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

@@ -10,7 +10,6 @@ type Item struct {
 	pickUpFunc func(*Player)
 	cellX      int
 	cellY      int
-	blocking   bool
 }
 
 func (g *Game) addItem(kind string, cellX, cellY int) {
@@ -62,6 +61,7 @@ func (g *Game) addItem(kind string, cellX, cellY int) {
 		}
 	}
 
+	// Very special case, these aren't items at all, but dungeon "furniture" which act like walls
 	if kind == "column" || kind == "barrel" {
 		item.pickUpFunc = func(p *Player) {
 		}

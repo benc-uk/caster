@@ -79,9 +79,9 @@ const data = {
     "wall_yellow_rock_0",
     "wall_yellow_rock_1",
   ],
-  pickerItem: ["potion", "key_green", "key_red", "key_blue", "meat", "apple", "crystal", "column", "barrel"],
+  pickerItem: ["potion", "crystal", "meat", "apple", "key_green", "key_red", "key_blue", "column", "barrel"],
   pickerDoor: ["basic", "key_blue", "key_red", "key_green", "switch"],
-  pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "switch", "pipe", "struts", "crack", "secret", "exit"],
+  pickerDeco: ["torch", "blood_1", "blood_2", "slime", "grate", "pipe", "struts", "crack", "switch", "secret", "exit"],
   selectedMonster: 0,
   selectedWall: 0,
   selectedItem: 0,
@@ -226,7 +226,7 @@ const data = {
     if (!this.map || !this.map[x] || !this.map[x][y]) return "none"
     const cell = this.map[x][y]
     if (!cell || cell === undefined) return "none"
-    if (cell.t == "p") return `url(/extra-gfx/player${cell.v}.png)`
+    if (cell.t == "p") return `url(/editor/gfx/player${cell.v}.png)`
     if (cell.t == "i") return `url(/gfx/items/${cell.v}.png)`
     if (cell.t == "m") return `url(/gfx/monsters/${cell.v}.png)`
     if (cell.t == "w") return `url(/gfx/walls/${cell.v}.png)`

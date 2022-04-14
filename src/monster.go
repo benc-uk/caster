@@ -159,6 +159,8 @@ func (g *Game) updateMonsters() {
 		}
 
 		if mon.state == MonsterStateDoNothing {
+			mon.state = MonsterStateDoNothing
+			// Do nothing
 		}
 
 		if mon.state == MonsterStateIdle {
@@ -220,8 +222,38 @@ func (g *Game) updateMonsters() {
 			// This weird code, stops monsters getting stuck on walls when walking towards the player
 			sprite.speed = mon.baseSpeed
 			mon.state = MonsterStateDoNothing
-			mon.stateTicker = 5
+			mon.stateTicker = 18
+
+			//wx, wy := wall.getCenter()
+			//oldAngle := sprite.angle
+
+			// if math.Abs(wx-mon.sprite.x) > 16 {
+			// 	if wx-mon.sprite.x < 0 {
+			// 		mon.sprite.angle -= math.Pi / 4
+			// 	} else {
+			// 		mon.sprite.angle += math.Pi / 4
+			// 	}
+			// } else if math.Abs(wy-mon.sprite.y) > 16 {
+			// 	if wy-mon.sprite.y < 0 {
+			// 		mon.sprite.angle += math.Pi / 4
+			// 	} else {
+			// 		mon.sprite.angle -= math.Pi / 4
+			// 	}
+			// }
+
 			mon.sprite.angle += math.Pi / 4
+
+			if mon.sprite.angle > math.Pi*2 {
+				mon.sprite.angle = -math.Pi * 2
+			}
+			if mon.sprite.angle < -math.Pi*2 {
+				mon.sprite.angle = math.Pi * 2
+			}
+			newX = sprite.x
+			newY = sprite.y
+			// newX = sprite.x + math.Cos(oldAngle)*-sprite.speed
+			// newY = sprite.y + math.Sin(oldAngle)*-sprite.speed
+			//logMessage(fmt.Sprintf("Monster wall turn %s: %f", mon.sprite.kind, mon.sprite.angle))
 		}
 		sprite.x = newX
 		sprite.y = newY

@@ -92,10 +92,7 @@ func (g *Game) loadMap(name string) error {
 
 			// Player start point
 			if cell.Type == "p" {
-				g.player.x = float64(cell.X*cellSize + cellSize/2)
-				g.player.y = float64(cell.Y*cellSize + cellSize/2)
-				g.player.cellX = cell.X
-				g.player.cellY = cell.Y
+				g.player.moveToCell(cell.X, cell.Y)
 				facing, _ := strconv.Atoi(cell.Value)
 				g.player.setFacing(facing)
 				log.Printf("Player spawn at %d,%d - Facing:%d", cell.X, cell.Y, facing)

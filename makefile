@@ -27,8 +27,6 @@ build-win: ## 🔨 Build binaries for Windows
 	GOOS=windows go build -o bin/caster.exe $(GO_PKG)/...
 
 build: build-win build-linux ## 🔨 Build binaries
-	rm -rf editor/gfx
-	cp -r gfx editor/gfx
 
 clean: ## ♻️  Clean up
 	@figlet $@
@@ -73,4 +71,5 @@ release-linux: build-linux ## 💻 Bundle Linux version
 
 run-editor: ## 📝 Run level editor
 	@figlet $@
-	cd editor; browser-sync start --server --single --no-ui --no-open --no-notify --watch
+	@npm i -g http-server
+	@http-server . -o /editor -c-1

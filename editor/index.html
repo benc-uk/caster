@@ -41,7 +41,7 @@
           <h2>Walls</h2>
           <div class="picker">
             <template x-for="(wall, index) of pickerWall">
-              <img :src="`gfx/walls/${wall}.png`" :class="index == selectedWall && 'selected'" @click="selectedWall = index" />
+              <img :src="`/gfx/walls/${wall}.png`" :class="index == selectedWall && 'selected'" @click="selectedWall = index" />
               <div x-text="index"></div>
             </template>
           </div>
@@ -49,7 +49,7 @@
           <h2>Items</h2>
           <div class="picker">
             <template x-for="(item, index) of pickerItem">
-              <img :src="`gfx/items/${item}.png`" :class="index == selectedItem && 'selected'" @click="selectedItem = index" />
+              <img :src="`/gfx/items/${item}.png`" :class="index == selectedItem && 'selected'" @click="selectedItem = index" />
               <div x-text="index"></div>
             </template>
           </div>
@@ -57,7 +57,7 @@
           <h2>Monsters</h2>
           <div class="picker">
             <template x-for="(mon, index) of pickerMonster">
-              <img :src="`gfx/monsters/${mon}.png`" :class="index == selectedMonster && 'selected'" @click="selectedMonster = index" />
+              <img :src="`/gfx/monsters/${mon}.png`" :class="index == selectedMonster && 'selected'" @click="selectedMonster = index" />
               <div x-text="index"></div>
             </template>
           </div>
@@ -65,7 +65,7 @@
           <h2>Doors</h2>
           <div class="picker">
             <template x-for="(d, index) of pickerDoor">
-              <img :src="`gfx/doors/${d}.png`" :class="index == selectedDoor && 'selected'" @click="selectedDoor = index" />
+              <img :src="`/gfx/doors/${d}.png`" :class="index == selectedDoor && 'selected'" @click="selectedDoor = index" />
               <div x-text="index"></div>
             </template>
           </div>
@@ -73,7 +73,7 @@
           <h2>Decorations</h2>
           <div class="picker">
             <template x-for="(deco, index) of pickerDeco">
-              <img :src="`gfx/decoration/${deco}.png`" :class="index == selectedDeco && 'selected'" @click="selectedDeco = index" />
+              <img :src="`/gfx/decoration/${deco}.png`" :class="index == selectedDeco && 'selected'" @click="selectedDeco = index" />
               <div x-text="index"></div>
             </template>
           </div>

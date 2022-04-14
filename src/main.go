@@ -14,7 +14,7 @@ import (
 )
 
 var game *Game
-var Version = "42"
+var Version = "44"
 var debug = false
 var titleLevelIndex = 0
 var titleLevels = []string{}

@@ -55,7 +55,7 @@ release-windows: build-win ## 💻 Bundle Windows version
 	cp -r ./maps $(WIN_DIR)/
 	cp -r ./sounds $(WIN_DIR)/
 	cp -r ./fonts $(WIN_DIR)/
-	cd $(WIN_DIR); zip ./crypt-caster-win.zip ./*
+	cd $(WIN_DIR); zip -r ./crypt-caster-win.zip .
 
 release-linux: build-linux ## 💻 Bundle Linux version
 	@figlet $@
@@ -66,7 +66,7 @@ release-linux: build-linux ## 💻 Bundle Linux version
 	cp -r ./maps $(LINUX_DIR)/
 	cp -r ./sounds $(LINUX_DIR)/
 	cp -r ./fonts $(LINUX_DIR)/
-	cd $(LINUX_DIR); zip ./crypt-caster-linux.zip ./*
+	cd $(LINUX_DIR); zip -r ./crypt-caster-linux.zip .
 	cp $(LINUX_DIR)/crypt-caster-linux.zip $(WIN_DIR)/crypt-caster-linux.zip
 
 run-editor: ## 📝 Run level editor

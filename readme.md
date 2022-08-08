@@ -17,7 +17,10 @@ Game Features:
 - Locked doors and keys
 - Health potions, mana spheres and food to eat, yum!
 
-## Screens Shots
+## Screens Shots & Videos
+
+#### Gameplay Video
+[![](https://i.ytimg.com/vi/qcmcv_ifNxM/maxresdefault.jpg)](https://youtu.be/qcmcv_ifNxM)
 
 <img src="docs/screenshot_20220414110126.png" width="450">
 <img src="docs/screenshot_20220414110204.png" width="450">
@@ -27,10 +30,6 @@ Game Features:
 <img src="docs/screenshot_20220414111402.png" width="450">
 
 ---
-
-[![](https://i9.ytimg.com/vi/qcmcv_ifNxM/mq2.jpg?sqp=COS54pIG&rs=AOn4CLAf9lHeIMzZFH_IK1NDTpTaHOo0NQ)](https://youtu.be/qcmcv_ifNxM)
-
-Video playthrough
 
 ## Installing & Running
 
